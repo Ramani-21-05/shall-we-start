@@ -10,7 +10,6 @@ import { Dashboard } from '@/pages/Dashboard'
 import { ForecastPage } from '@/pages/ForecastPage'
 import { PastPerformancePage } from '@/pages/PastPerformancePage'
 import { ExplainabilityPage } from '@/pages/ExplainabilityPage'
-import { AnomalyPage } from '@/pages/AnomalyPage'
 import { StrategyPage } from '@/pages/StrategyPage'
 import { AdminUsersPage } from '@/pages/AdminUsersPage'
 import { LogsPage } from '@/pages/LogsPage'
@@ -89,14 +88,6 @@ export default function App() {
                         element={
                           <ProtectedRoute allowedRoles={['ADMIN']}>
                             <ExplainabilityPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/anomaly"
-                        element={
-                          <ProtectedRoute allowedRoles={['ADMIN']}>
-                            <AnomalyPage />
                           </ProtectedRoute>
                         }
                       />

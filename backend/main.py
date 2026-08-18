@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import products, models, forecast, explain, anomaly, inventory, dashboard, baselines, inventory_v2, vendor, simulation, history, strategy, auth, activity_logs
+from routers import products, models, forecast, explain, inventory, dashboard, baselines, inventory_v2, vendor, simulation, history, strategy, auth, activity_logs
 
 RPC_SQL = """
 CREATE OR REPLACE FUNCTION get_drug_monthly_totals(p_drug_code TEXT)
@@ -182,7 +182,6 @@ app.include_router(products.router)
 app.include_router(models.router)
 app.include_router(forecast.router)
 app.include_router(explain.router)
-app.include_router(anomaly.router)
 app.include_router(inventory.router)
 app.include_router(inventory_v2.router)
 app.include_router(vendor.router)
@@ -203,7 +202,6 @@ def root():
         "docs": "/docs",
         "drugs": ["M01AB", "M01AE", "N02BA", "N02BE", "N05B", "N05C", "R03", "R06"],
         "training_cutoff": "2018-12-31",
-        "anomaly_detection_year": 2019,
     }
 
 

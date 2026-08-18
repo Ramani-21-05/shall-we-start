@@ -52,10 +52,9 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Intelligence & Forecasting',
     items: [
-      { to: '/forecast', icon: TrendingUp, label: 'Demand Forecast', roles: ['MARKETING'] },
-      { to: '/performance', icon: History, label: 'Past Performance', roles: ['MARKETING'] },
+      { to: '/forecast', icon: TrendingUp, label: 'Demand Forecast', roles: ['ADMIN', 'MARKETING'] },
+      { to: '/performance', icon: History, label: 'Past Performance', roles: ['ADMIN', 'MARKETING'] },
       { to: '/explainability', icon: Lightbulb, label: 'Explainability', roles: ['ADMIN'] },
-      { to: '/anomaly', icon: AlertTriangle, label: 'Anomaly Detection', roles: ['ADMIN'] },
     ],
   },
   {
