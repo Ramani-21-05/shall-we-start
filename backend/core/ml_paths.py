@@ -1,6 +1,8 @@
 import os
 
-BASE_DIR = r"c:\Users\ranje\sales forcasting"
+CURRENT_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(CURRENT_FILE_DIR)
+BASE_DIR = os.getenv("APP_BASE_DIR", os.path.dirname(BACKEND_DIR))
 
 # ============================================================
 # READ-ONLY paths to research/ML artifact directories.
