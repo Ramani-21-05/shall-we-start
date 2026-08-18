@@ -38,14 +38,17 @@ export function AnomalyPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
-            <AlertTriangle size={22} /> Anomaly Detection
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            2019 data only · Stage 2: Forecast-Aware detection · Model NOT trained on 2019
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-red-500/20 border border-rose-500/30 flex items-center justify-center shrink-0">
+            <AlertTriangle size={20} className="text-rose-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold gradient-text">Anomaly Detection Engine</h1>
+            <p className="text-slate-400 text-xs mt-0.5">
+              2019 data only · Stage 2: Forecast-Aware detection · Holdout Evaluation
+            </p>
+          </div>
         </div>
         <select value={drug} onChange={e => setDrug(e.target.value)}
           className="glass-card-sm px-4 py-2 text-sm text-white bg-transparent cursor-pointer">

@@ -99,17 +99,16 @@ export function PastPerformancePage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
-            <History size={22} /> Past Performance
-          </h1>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <p className="text-slate-400 text-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
+            <History size={20} className="text-cyan-300" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold gradient-text">Past Performance & Trends</h1>
+            <p className="text-slate-400 text-xs mt-0.5">
               Historical Sales Analysis · 2014–2019 · {DRUG_FULL_NAMES[drug]}
             </p>
-
-
           </div>
         </div>
         <select

@@ -185,13 +185,16 @@ export function ForecastPage() {
     <div className="space-y-6 animate-fade-in-up">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
-            <TrendingUp size={22} /> Demand Forecast
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            {yearFilter === '2019' ? '2019 Holdout Backtest · P10 / P50 / P90 Prediction Intervals' : '2020 Operational Demand Projection · Pure Predictive AI Horizon'}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+            <TrendingUp size={20} className="text-indigo-300" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold gradient-text">Demand Forecast & Projections</h1>
+            <p className="text-slate-400 text-xs mt-0.5">
+              {yearFilter === '2019' ? '2019 Holdout Backtest · P10 / P50 / P90 Prediction Intervals' : '2020 Operational Demand Projection · Pure Predictive AI Horizon'}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
