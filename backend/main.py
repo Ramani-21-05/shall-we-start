@@ -104,16 +104,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow React frontend (localhost:5173)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 # ── Request Audit Logging Middleware ──────────────────────────────────────────
 # Logs every API call to the activity_logs table in Supabase.
 # Skips read-heavy GETs and noisy health/docs paths to keep logs meaningful.
@@ -137,9 +127,13 @@ async def request_audit_logger(request: Request, call_next):
         return await call_next(request)
 
     start_time = time.time()
-    response = await call_next(request)
-    duration_ms = round((time.time() - start_time) * 1000)
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        # If an unhandled error happens, let it be handled by standard handlers
+        raise exc
 
+    duration_ms = round((time.time() - start_time) * 1000)
     status_code = response.status_code
     log_status = "SUCCESS" if status_code < 400 else ("WARNING" if status_code < 500 else "ERROR")
 
@@ -171,6 +165,16 @@ async def request_audit_logger(request: Request, call_next):
         pass  # Never break the request flow
 
     return response
+
+# CORS — allow all origins including Vercel and local
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Register all routers
 app.include_router(auth.router)
