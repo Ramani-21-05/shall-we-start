@@ -306,7 +306,7 @@ export function Dashboard() {
               <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(val: number) => [`${val.toFixed(2)} units/hr`, 'Avg Sales']}
+                formatter={(val: any) => [`${(val ?? 0).toFixed(2)} units/hr`, 'Avg Sales']}
                 labelFormatter={h => `Time Window: ${h}:00 - ${h}:59`}
               />
               <Bar dataKey="avg_sales" radius={[4, 4, 0, 0]}>
@@ -343,7 +343,7 @@ export function Dashboard() {
               <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(val: number) => [`${val.toFixed(2)} units/hr`, 'Avg Sales']}
+                formatter={(val: any) => [`${(val ?? 0).toFixed(2)} units/hr`, 'Avg Sales']}
               />
               <Bar dataKey="avg_sales" radius={[4, 4, 0, 0]}>
                 {weekday_pattern.map(entry => (
@@ -382,8 +382,8 @@ export function Dashboard() {
               <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(val: number, name: string) => [
-                  name === 'index' ? val.toFixed(2) : `${val.toFixed(2)} units`,
+                formatter={(val: any, name: any) => [
+                  name === 'index' ? (val ?? 0).toFixed(2) : `${(val ?? 0).toFixed(2)} units`,
                   name === 'index' ? 'Seasonal Index' : 'Avg Sales',
                 ]}
               />
@@ -416,7 +416,7 @@ export function Dashboard() {
               <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(val: number) => [val.toLocaleString(), 'Annual Sales']}
+                formatter={(val: any) => [(val ?? 0).toLocaleString(), 'Annual Sales']}
               />
               <Bar dataKey="total_sales" fill="#6366f1" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -455,8 +455,8 @@ export function Dashboard() {
                 </Pie>
                 <Tooltip
                   contentStyle={TOOLTIP_STYLE}
-                  formatter={(val: number, name: string) => [
-                    `${val.toLocaleString()} units`,
+                  formatter={(val: any, name: any) => [
+                    `${(val ?? 0).toLocaleString()} units`,
                     DRUG_FULL_NAMES[name] || name,
                   ]}
                 />

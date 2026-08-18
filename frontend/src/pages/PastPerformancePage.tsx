@@ -194,7 +194,7 @@ export function PastPerformancePage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="year" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={60} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [v.toLocaleString(), 'Annual Sales']} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [(v ?? 0).toLocaleString(), 'Annual Sales']} />
                 <Bar dataKey="total_sales" radius={[4, 4, 0, 0]} maxBarSize={60}>
                   {hist!.yoy_series.map(entry => (
                     <Cell key={entry.year} fill={YEAR_COLORS[String(entry.year)] ?? '#6366f1'} />
@@ -225,7 +225,7 @@ export function PastPerformancePage() {
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={55} />
                 <Tooltip
                   contentStyle={TOOLTIP_STYLE}
-                  formatter={(v: number) => [v.toLocaleString(), 'Monthly Sales']}
+                  formatter={(v: any) => [(v ?? 0).toLocaleString(), 'Monthly Sales']}
                   labelFormatter={l => `Period: ${l}`}
                 />
                 {/* Year boundary reference lines */}
@@ -259,7 +259,7 @@ export function PastPerformancePage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="month_name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} width={50} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number, name: string) => [v.toLocaleString(), name]} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any, name: any) => [(v ?? 0).toLocaleString(), name]} />
                 <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8', paddingTop: 4 }} />
                 {['2014', '2015', '2016', '2017', '2018', '2019'].map(yr => (
                   <Bar key={yr} dataKey={yr} fill={YEAR_COLORS[yr]} maxBarSize={16} radius={[2, 2, 0, 0]} />
