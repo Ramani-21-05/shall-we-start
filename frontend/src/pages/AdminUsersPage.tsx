@@ -151,7 +151,7 @@ export function AdminUsersPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 animate-fade-in-up">
       {/* Page Title */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">

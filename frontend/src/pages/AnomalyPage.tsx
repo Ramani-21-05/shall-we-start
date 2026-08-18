@@ -54,7 +54,7 @@ export function AnomalyPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="glass-card p-4 text-center border border-red-500/20">
           <p className="text-2xl font-bold text-red-400">{highSev}</p>
           <p className="text-xs text-slate-400 mt-1">HIGH severity</p>
