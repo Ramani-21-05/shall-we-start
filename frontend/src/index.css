@@ -1,0 +1,452 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/* =====================================================
+   PharmaCast Design System — Luxury Light Theme
+   Dark Sidebar | Porcelain White Canvas | Luxury Royal Blue Pill Buttons
+   ===================================================== */
+
+@theme {
+  --color-brand-50:  #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+
+  --color-surface-950: #f3f5fa;
+  --color-surface-900: #ffffff;
+  --color-surface-800: #f8fafc;
+  --color-surface-700: #e2e8f0;
+  --color-surface-600: #cbd5e1;
+  --color-surface-500: #94a3b8;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger:  #ef4444;
+  --color-info:    #06b6d4;
+
+  --font-sans:  'Inter', system-ui, sans-serif;
+  --font-display: 'Sora', 'Inter', system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', monospace;
+
+  --radius-xl:  1.25rem;
+  --radius-2xl: 1.5rem;
+}
+
+/* === Base Reset === */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-sans);
+  background-color: #f3f5fa;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #f3f5fa;
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ===================================================================
+   SIDEBAR — Dark & Sleek (Stays Premium Dark)
+   =================================================================== */
+
+.sidebar {
+  width: 268px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0b1120 0%, #070a14 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 40;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  color: #f8fafc;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.875rem;
+  border-radius: 0.75rem;
+  font-size: 0.835rem;
+  font-weight: 500;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  position: relative;
+}
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+.sidebar-item.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.15) 100%);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
+}
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3.5px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+}
+
+.sidebar .glass-card-sm {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* ===================================================================
+   MAIN CONTENT CANVAS & LUXURY WHITE CARDS
+   =================================================================== */
+
+.main-content {
+  margin-left: 0;
+  min-height: 100vh;
+  padding: 1rem;
+  padding-top: 4.5rem; /* Account for 56px fixed mobile header bar */
+  background: #f3f5fa;
+  color: #0f172a;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    margin-left: 268px;
+    padding: 1.75rem 2rem;
+    padding-top: 1.75rem;
+    width: calc(100% - 268px);
+  }
+}
+
+/* Responsive Table & Canvas Wrappers */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* Cards — Crisp Pure White with Floating Shadow */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  box-shadow:
+    0 10px 30px -5px rgba(15, 23, 42, 0.04),
+    0 4px 12px -2px rgba(15, 23, 42, 0.02);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-card-sm {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.875rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.glass-card:hover,
+.metric-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 36px -6px rgba(15, 23, 42, 0.08),
+    0 6px 16px -3px rgba(15, 23, 42, 0.03);
+}
+
+/* ===================================================================
+   TYPOGRAPHY — High-Contrast Corporate
+   =================================================================== */
+
+.gradient-text {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-warm {
+  background: linear-gradient(135deg, #431407 0%, #d97706 50%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* ===================================================================
+   BUTTONS — Luxury Royal Blue Pill Buttons
+   =================================================================== */
+
+.btn-primary, button[type="submit"].bg-indigo-600, button.bg-indigo-600 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.6rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+  color: #ffffff !important;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 9999px !important; /* Luxury Pill Shape */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.45);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-primary:hover, button[type="submit"].bg-indigo-600:hover, button.bg-indigo-600:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 12px 26px -4px rgba(37, 99, 235, 0.6);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.25rem;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.18s ease;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* ===================================================================
+   METRIC CARDS & KPIS
+   =================================================================== */
+
+.metric-card {
+  padding: 1.35rem;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  cursor: default;
+}
+.metric-card:hover { transform: translateY(-2px); }
+
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.kpi-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+/* ===================================================================
+   INPUTS & SELECTS
+   =================================================================== */
+
+select, input[type="text"], input[type="password"], input[type="email"] {
+  font-family: var(--font-sans);
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  border-radius: 0.75rem;
+}
+
+select:focus, input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  outline: none;
+}
+
+/* ===================================================================
+   BADGES — Soft Corporate Pills
+   =================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.badge-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.badge-danger  { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.badge-info    { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+.badge-brand   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.badge-purple  { background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+
+/* ===================================================================
+   RECHARTS TOOLTIP — Light Luxury
+   =================================================================== */
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1) !important;
+  font-size: 12px !important;
+}
+
+/* ===================================================================
+   TABLE — Clean Light Enterprise
+   =================================================================== */
+
+.table-premium thead tr {
+  background: #f8fafc;
+}
+.table-premium th {
+  padding: 0.75rem 1rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #475569;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+.table-premium td {
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+}
+.table-premium tr:last-child td { border-bottom: none; }
+.table-premium tbody tr:hover td { background: #f8fafc; }
+
+/* ===================================================================
+   MAIN CONTENT COLOR ADAPTATIONS FOR TAILWIND UTILITIES
+   =================================================================== */
+
+.main-content .glass-card, .main-content .glass-card-sm {
+  color: #0f172a;
+}
+
+.main-content h1, .main-content h2, .main-content h3, .main-content h4 {
+  color: #0f172a;
+}
+
+.main-content p.text-slate-400, .main-content span.text-slate-400 {
+  color: #64748b;
+}
+
+.main-content .text-white {
+  color: #0f172a;
+}
+
+.main-content .text-slate-300, .main-content .text-slate-200 {
+  color: #334155;
+}
+
+.main-content .border-white\/10, .main-content .border-white\/5 {
+  border-color: #e2e8f0;
+}
+
+.main-content .bg-white\/5, .main-content .bg-white\/10 {
+  background-color: #f8fafc;
+}
+
+/* ===================================================================
+   DIVIDER & SECTION LABELS
+   =================================================================== */
+
+.divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 1.5rem 0;
+}
+
+.section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+/* Status indicator live dot */
+.status-dot-live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }

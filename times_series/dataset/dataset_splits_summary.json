@@ -1,0 +1,50 @@
+{
+    "dataset_name": "Pharmaceutical Sales Forecasting (Hourly & Daily)",
+    "split_strategy": "Temporal Chronological Split",
+    "hourly_splits": {
+        "train": {
+            "years": "2014-2017",
+            "rows": 35032,
+            "start_time": "2014-01-02 08:00:00",
+            "end_time": "2017-12-31 23:00:00",
+            "file": "train_hourly.csv"
+        },
+        "validation": {
+            "years": "2018",
+            "rows": 8760,
+            "start_time": "2018-01-01 00:00:00",
+            "end_time": "2018-12-31 23:00:00",
+            "file": "val_hourly.csv"
+        },
+        "test": {
+            "years": "2019",
+            "rows": 6740,
+            "start_time": "2019-01-01 00:00:00",
+            "end_time": "2019-10-08 19:00:00",
+            "file": "test_hourly.csv"
+        }
+    },
+    "daily_splits": {
+        "train": {
+            "years": "2014-2017",
+            "days": 1460,
+            "start_date": "2014-01-02 00:00:00",
+            "end_date": "2017-12-31 00:00:00",
+            "file": "train_daily.csv"
+        },
+        "validation": {
+            "years": "2018",
+            "days": 365,
+            "start_date": "2018-01-01 00:00:00",
+            "end_date": "2018-12-31 00:00:00",
+            "file": "val_daily.csv"
+        },
+        "test": {
+            "years": "2019",
+            "days": 281,
+            "start_date": "2019-01-01 00:00:00",
+            "end_date": "2019-10-08 00:00:00",
+            "file": "test_daily.csv"
+        }
+    }
+}

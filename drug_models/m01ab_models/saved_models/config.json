@@ -1,0 +1,7 @@
+{
+  "drug_code": "M01AB",
+  "training_period": "2014-01-02 to 2020-03-31",
+  "forecast_horizon": "2020-01-01 to 2020-12-31",
+  "status": "DYNAMIC_2020_RETRAINED",
+  "last_retrained": "2026-08-18 01:28:11"
+}
