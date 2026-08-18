@@ -2,12 +2,12 @@ from pydantic_settings import BaseSettings
 import os
 
 class Settings(BaseSettings):
-    # Supabase
-    SUPABASE_URL: str = "https://lsqpkqflqhwlcvtkoowr.supabase.co"
-    SUPABASE_KEY: str = "sb_publishable_FTmqAvJnNEx36CvCii16zQ_gK1s_P7i"
+    # Supabase (from .env or env vars)
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://cjzsyyzjcendnldhxfdn.supabase.co")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqenN5eXpqY2VuZG5sZGh4ZmRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMjkxNDgsImV4cCI6MjEwMjYwNTE0OH0.BFZ8moRHnu6-JfzDdW3ildICkv2oDYy4CCbvfupHcAM")
 
-    # Groq LLM
-    GROQ_API_KEY: str = ""
+    # Groq LLM (read from .env or Render environment variable)
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
 
     # SMTP Email Credentials Configuration
     SMTP_HOST: str = "smtp.gmail.com"
