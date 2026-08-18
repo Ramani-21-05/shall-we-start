@@ -136,7 +136,7 @@ export function VendorDashboardPage() {
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                   statusFilter === st
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-900 text-slate-400 hover:bg-white/5'
+                    : 'bg-white text-slate-400 hover:bg-white/5'
                 }`}
               >
                 {st === '' ? 'All Orders' : st}

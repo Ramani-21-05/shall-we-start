@@ -1,4 +1,4 @@
--- ================================================
+﻿-- ================================================
 -- PharmaCast: activity_logs table for Supabase
 -- Run this SQL in Supabase Dashboard > SQL Editor
 -- ================================================
@@ -28,8 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_status      ON activity_logs (statu
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 
 -- Allow service_role (backend) to do all operations
-DROP POLICY IF EXISTS "service_role_full_access" ON activity_logs;
-CREATE POLICY "service_role_full_access"
+CREATE POLICY IF NOT EXISTS "service_role_full_access"
 ON activity_logs FOR ALL
 TO service_role
 USING (true) WITH CHECK (true);

@@ -185,16 +185,13 @@ export function ForecastPage() {
     <div className="space-y-6 animate-fade-in-up">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-            <TrendingUp size={20} className="text-indigo-300" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold gradient-text">Demand Forecast & Projections</h1>
-            <p className="text-slate-400 text-xs mt-0.5">
-              {yearFilter === '2019' ? '2019 Holdout Backtest · P10 / P50 / P90 Prediction Intervals' : '2020 Operational Demand Projection · Pure Predictive AI Horizon'}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
+            <TrendingUp size={22} /> Demand Forecast
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            {yearFilter === '2019' ? '2019 Holdout Backtest · P10 / P50 / P90 Prediction Intervals' : '2020 Operational Demand Projection · Pure Predictive AI Horizon'}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -206,7 +203,7 @@ export function ForecastPage() {
                 onClick={() => setYearFilter(y)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${yearFilter === y
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/40 border border-indigo-400/30'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    : 'text-slate-600 hover:text-indigo-700 hover:bg-slate-200/80'
                   }`}
               >
                 {y === '2019' ? '2019 Holdout' : '2020 Forecast'}
@@ -246,7 +243,7 @@ export function ForecastPage() {
                 onClick={() => setGranularity(g)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${granularity === g
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    : 'text-slate-600 hover:text-indigo-700 hover:bg-slate-200/80'
                   }`}
               >
                 {g}
@@ -321,13 +318,13 @@ export function ForecastPage() {
                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0.03} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} tickCount={granularity === 'monthly' ? 12 : 8}
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="date" tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} tickCount={granularity === 'monthly' ? 12 : 8}
                 axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
               <YAxis
                 ticks={yTicks}
                 domain={yTicks ? [0, yTicks[yTicks.length - 1]] : undefined}
-                tick={{ fill: '#94a3b8', fontSize: 11 }}
+                tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -399,9 +396,9 @@ function DrugSelector({ value, onChange }: { value: string; onChange: (v: string
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="glass-card-sm px-4 py-2 text-sm text-white bg-slate-900/90 border-indigo-500/30 cursor-pointer rounded-lg"
+      className="glass-card-sm px-4 py-2 text-sm text-white bg-white border-indigo-500/30 cursor-pointer rounded-lg"
     >
-      {DRUGS.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
+      {DRUGS.map(d => <option key={d} value={d} >{d}</option>)}
     </select>
   )
 }

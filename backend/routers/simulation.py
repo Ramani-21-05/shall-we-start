@@ -13,38 +13,45 @@ Implements:
 - 2019 Model Validation performance holdout summary
 """
 
-import sqlite3
 import os
 from datetime import datetime, timedelta
 from typing import Optional, Literal
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from init_hackathon_db import DB_PATH, get_sqlite_conn, INITIAL_DRUGS
+from init_hackathon_db import get_sqlite_conn, INITIAL_DRUGS
 from core.database import get_supabase
 
 router = APIRouter(prefix="/api/simulation", tags=["Simulation"])
 
 
+import threading
+
 def sync_to_supabase(table: str, data: dict | list, on_conflict: str | None = None):
-    """Safely syncs / upserts a record to Supabase PostgreSQL."""
-    try:
-        sb = get_supabase()
-        if on_conflict:
-            sb.table(table).upsert(data, on_conflict=on_conflict).execute()
-        else:
-            sb.table(table).upsert(data).execute()
-    except Exception as e:
-        pass
+    """Safely & asynchronously syncs / upserts records to Supabase PostgreSQL in background thread."""
+    def _do_sync():
+        try:
+            sb = get_supabase()
+            if on_conflict:
+                sb.table(table).upsert(data, on_conflict=on_conflict).execute()
+            else:
+                sb.table(table).upsert(data).execute()
+        except Exception:
+            pass
+
+    threading.Thread(target=_do_sync, daemon=True).start()
 
 
 def sync_delete_supabase(table: str):
     """Safely wipes all simulated records from a Supabase PostgreSQL table on reset."""
-    try:
-        sb = get_supabase()
-        sb.table(table).delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
-    except Exception:
-        pass
+    def _do_delete():
+        try:
+            sb = get_supabase()
+            sb.table(table).delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+        except Exception:
+            pass
+
+    threading.Thread(target=_do_delete, daemon=True).start()
 
 
 # Pydantic Schemas
@@ -226,7 +233,6 @@ def get_simulation_state():
     cur.execute("SELECT * FROM alerts WHERE status = 'ACTIVE' ORDER BY id DESC LIMIT 10")
     active_alerts = [dict(a) for a in cur.fetchall()]
 
-    conn.close()
 
     return {
         "current_date": sim_date,
@@ -256,7 +262,6 @@ def update_simulation_control(req: SimulationControlRequest):
         sync_to_supabase("simulation_state", {"key": "speed", "value": req.speed}, on_conflict="key")
 
     conn.commit()
-    conn.close()
     return get_simulation_state()
 
 
@@ -314,7 +319,7 @@ def _perform_single_day_step(cur, curr_dt: datetime) -> tuple[str, bool]:
         sales_qty = float(s_row["sales_qty"]) if s_row else 0.0
 
         if sales_qty > 0:
-            stock_after = max(0.0, stock_before - sales_qty)
+            stock_after = round(max(0.0, stock_before - sales_qty), 1)
             cur.execute(
                 "UPDATE inventory SET current_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE drug_id = ?",
                 (stock_after, drug_id)
@@ -356,19 +361,19 @@ def _perform_single_day_step(cur, curr_dt: datetime) -> tuple[str, bool]:
                 )
 
     cur.execute("SELECT drug_id, baseline_stock, current_stock, safety_stock, lead_time_days, incoming_stock FROM inventory")
-    for inv_r in cur.fetchall():
-        sync_to_supabase(
-            "inventory",
-            {
-                "drug_id": inv_r["drug_id"],
-                "baseline_stock": float(inv_r["baseline_stock"]),
-                "current_stock": float(inv_r["current_stock"]),
-                "safety_stock": float(inv_r["safety_stock"]),
-                "lead_time_days": int(inv_r["lead_time_days"]),
-                "incoming_stock": float(inv_r["incoming_stock"]),
-            },
-            on_conflict="drug_id"
-        )
+    inv_recs = [
+        {
+            "drug_id": inv_r["drug_id"],
+            "baseline_stock": float(inv_r["baseline_stock"]),
+            "current_stock": float(inv_r["current_stock"]),
+            "safety_stock": float(inv_r["safety_stock"]),
+            "lead_time_days": int(inv_r["lead_time_days"]),
+            "incoming_stock": float(inv_r["incoming_stock"]),
+        }
+        for inv_r in cur.fetchall()
+    ]
+    if inv_recs:
+        sync_to_supabase("inventory", inv_recs, on_conflict="drug_id")
 
     cur.execute("INSERT OR REPLACE INTO simulation_state (key, value) VALUES ('current_date', ?)", (next_date_str,))
     sync_to_supabase("simulation_state", {"key": "current_date", "value": next_date_str}, on_conflict="key")
@@ -380,6 +385,7 @@ def _save_monthly_summary(cur, start_dt: datetime, end_of_month_dt: datetime):
     month = start_dt.month
     month_name = start_dt.strftime("%B")
 
+    sb_records = []
     for d in INITIAL_DRUGS:
         drug_id = d["drug_id"]
         cur.execute("SELECT current_stock, baseline_stock, safety_stock FROM inventory WHERE drug_id = ?", (drug_id,))
@@ -429,26 +435,25 @@ def _save_monthly_summary(cur, start_dt: datetime, end_of_month_dt: datetime):
                 orders_cnt, tot_restock, risk_events
             )
         )
-        sync_to_supabase(
-            "monthly_simulation_records",
-            {
-                "year": year,
-                "month": month,
-                "month_name": month_name,
-                "month_start_date": start_dt.strftime("%Y-%m-%d"),
-                "month_end_date": end_of_month_dt.strftime("%Y-%m-%d"),
-                "drug_id": drug_id,
-                "starting_stock": float(d["starting_stock"]),
-                "ending_stock": ending_stock,
-                "total_monthly_sales": total_sales,
-                "baseline_stock": float(d["baseline_stock"]),
-                "safety_stock": float(d["safety_stock"]),
-                "total_orders_placed": orders_cnt,
-                "total_units_restocked": tot_restock,
-                "stockout_risk_events": risk_events,
-            },
-            on_conflict="year,month,drug_id"
-        )
+        sb_records.append({
+            "year": year,
+            "month": month,
+            "month_name": month_name,
+            "month_start_date": start_dt.strftime("%Y-%m-%d"),
+            "month_end_date": end_of_month_dt.strftime("%Y-%m-%d"),
+            "drug_id": drug_id,
+            "starting_stock": float(d["starting_stock"]),
+            "ending_stock": ending_stock,
+            "total_monthly_sales": total_sales,
+            "baseline_stock": float(d["baseline_stock"]),
+            "safety_stock": float(d["safety_stock"]),
+            "total_orders_placed": orders_cnt,
+            "total_units_restocked": tot_restock,
+            "stockout_risk_events": risk_events,
+        })
+
+    if sb_records:
+        sync_to_supabase("monthly_simulation_records", sb_records, on_conflict="year,month,drug_id")
 
 
 @router.post("/step")
@@ -473,7 +478,6 @@ def step_simulation(target_date: Optional[str] = Query(None, description="Option
         cur.execute("INSERT OR REPLACE INTO simulation_state (key, value) VALUES ('pause_reason', 'Stockout Risk / Reorder Action Required')")
 
     conn.commit()
-    conn.close()
     return get_simulation_state()
 
 
@@ -530,7 +534,6 @@ def step_month_simulation():
             cur.execute("INSERT OR REPLACE INTO simulation_state (key, value) VALUES ('pause_reason', 'End of Month Review — Next Month Ready')")
 
     conn.commit()
-    conn.close()
     return get_simulation_state()
 
 
@@ -579,7 +582,6 @@ def reset_simulation():
     sync_delete_supabase("baseline_history")
 
     conn.commit()
-    conn.close()
     return get_simulation_state()
 
 
@@ -590,7 +592,6 @@ def get_monthly_records():
     cur = conn.cursor()
     cur.execute("SELECT * FROM monthly_simulation_records ORDER BY year, month, drug_id")
     rows = cur.fetchall()
-    conn.close()
     return [dict(r) for r in rows]
 
 
@@ -612,8 +613,7 @@ def handle_order_action(req: OrderActionRequest):
     drug_row = cur.fetchone()
 
     if not drug_row:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Drug not found")
+            raise HTTPException(status_code=404, detail="Drug not found")
 
     ds = compute_drug_state(cur, drug_row, sim_date)
     lead_time = req.lead_time_days if req.lead_time_days and req.lead_time_days > 0 else int(drug_row["lead_time_days"])
@@ -696,7 +696,6 @@ def handle_order_action(req: OrderActionRequest):
             on_conflict="drug_id"
         )
 
-    conn.close()
     return get_simulation_state()
 
 
@@ -732,7 +731,6 @@ def update_lead_time(req: LeadTimeRequest):
             on_conflict="drug_id"
         )
 
-    conn.close()
     return get_simulation_state()
 
 
@@ -760,7 +758,6 @@ def update_lead_time_all(req: GlobalLeadTimeRequest):
             on_conflict="drug_id"
         )
 
-    conn.close()
     return get_simulation_state()
 
 
@@ -773,8 +770,7 @@ def handle_baseline_action(req: BaselineActionRequest):
     cur.execute("SELECT baseline_stock, current_stock, safety_stock, lead_time_days, incoming_stock FROM inventory WHERE drug_id = ?", (req.drug_id,))
     row = cur.fetchone()
     if not row:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Drug not found")
+            raise HTTPException(status_code=404, detail="Drug not found")
 
     old_baseline = float(row["baseline_stock"])
 
@@ -817,7 +813,6 @@ def handle_baseline_action(req: BaselineActionRequest):
         )
 
     conn.commit()
-    conn.close()
     return get_simulation_state()
 
 
@@ -833,7 +828,6 @@ def get_transactions(limit: int = 50, drug_id: Optional[str] = None):
         cur.execute("SELECT * FROM inventory_transactions ORDER BY id DESC LIMIT ?", (limit,))
 
     rows = cur.fetchall()
-    conn.close()
     return [dict(r) for r in rows]
 
 

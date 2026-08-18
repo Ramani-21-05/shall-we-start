@@ -1,6 +1,6 @@
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = r"c:\Users\ranje\sales forcasting"
 
 # ============================================================
 # READ-ONLY paths to research/ML artifact directories.

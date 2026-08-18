@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import api from '@/api/client'
 import {
   Play,
   Pause,
@@ -26,7 +27,7 @@ import {
   ResponsiveContainer, Cell,
 } from 'recharts'
 
-const API_BASE = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api/simulation`
+const API_BASE = 'http://localhost:8000/api/simulation'
 
 
 export function HackathonDashboard() {
@@ -48,9 +49,9 @@ export function HackathonDashboard() {
 
   const fetchState = async () => {
     try {
-      const res = await fetch(`${API_BASE}/state`)
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.get('/simulation/state')
+      if (res.data) {
+        const data = res.data
         setState(data)
       }
     } catch (err) {
@@ -62,9 +63,9 @@ export function HackathonDashboard() {
 
   const fetchValidation = async () => {
     try {
-      const res = await fetch(`${API_BASE}/validation`)
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.get('/simulation/validation')
+      if (res.data) {
+        const data = res.data
         setValidationData(data)
       }
     } catch (err) {
@@ -74,9 +75,9 @@ export function HackathonDashboard() {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`${API_BASE}/transactions?limit=50`)
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.get('/simulation/transactions?limit=50')
+      if (res.data) {
+        const data = res.data
         setTransactions(data)
       }
     } catch (err) {
@@ -86,9 +87,9 @@ export function HackathonDashboard() {
 
   const fetchMonthlyRecords = async () => {
     try {
-      const res = await fetch(`${API_BASE}/monthly_records`)
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.get('/simulation/monthly_records')
+      if (res.data) {
+        const data = res.data
         setMonthlyRecords(data)
       }
     } catch (err) {
@@ -106,42 +107,37 @@ export function HackathonDashboard() {
 
   // Auto-step simulation loop when status === 'running'
   useEffect(() => {
-    let isRunning = true;
     if (state?.status === 'running') {
       const speedMs =
-        state.speed === '0.25x' || state.speed === '0.25' ? 3000 :
-        state.speed === '0.50x' || state.speed === '0.50' ? 2000 :
-        state.speed === '0.75x' || state.speed === '0.75' ? 1333 :
-        1000 // 1x default pace: 1 second per simulation day
-      const runStep = async () => {
-        if (!isRunning) return;
+        state.speed === '0.25x' || state.speed === '0.25' ? 1000 :
+        state.speed === '0.50x' || state.speed === '0.50' ? 600 :
+        state.speed === '0.75x' || state.speed === '0.75' ? 400 :
+        300 // Fast 1x default pace: 300ms per simulation day
+      timerRef.current = setInterval(async () => {
         try {
-          const res = await fetch(`${API_BASE}/step`, { method: 'POST' })
-          if (res.ok) {
-            const data = await res.json()
+          const res = await api.post('/simulation/step')
+          if (res.data) {
+            const data = res.data
             setState(data)
           }
         } catch (err) {
           console.error('Step error:', err)
         }
-        if (isRunning) timerRef.current = setTimeout(runStep, speedMs) as any;
-      };
-      timerRef.current = setTimeout(runStep, speedMs) as any;
+      }, speedMs)
     } else {
       if (timerRef.current) clearInterval(timerRef.current)
     }
 
     return () => {
-      isRunning = false;
-      if (timerRef.current) clearTimeout(timerRef.current)
+      if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [state?.status, state?.speed])
 
   const handleStep = async () => {
     try {
-      const res = await fetch(`${API_BASE}/step`, { method: 'POST' })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/step')
+      if (res.data) {
+        const data = res.data
         setState(data)
         fetchTransactions()
       }
@@ -152,9 +148,9 @@ export function HackathonDashboard() {
 
   const handleStepMonth = async () => {
     try {
-      const res = await fetch(`${API_BASE}/step_month`, { method: 'POST' })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/step_month')
+      if (res.data) {
+        const data = res.data
         setState(data)
         fetchTransactions()
         fetchMonthlyRecords()
@@ -166,13 +162,9 @@ export function HackathonDashboard() {
 
   const handleControl = async (status?: string, speed?: string) => {
     try {
-      const res = await fetch(`${API_BASE}/control`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, speed }),
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/control', { status, speed })
+      if (res.data) {
+        const data = res.data
         setState(data)
       }
     } catch (err) {
@@ -182,9 +174,9 @@ export function HackathonDashboard() {
 
   const handleReset = async () => {
     try {
-      const res = await fetch(`${API_BASE}/reset`, { method: 'POST' })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/reset')
+      if (res.data) {
+        const data = res.data
         setState(data)
         fetchTransactions()
         fetchMonthlyRecords()
@@ -201,19 +193,9 @@ export function HackathonDashboard() {
     leadTimeDays?: number
   ) => {
     try {
-      const res = await fetch(`${API_BASE}/order/action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          drug_id: drugId,
-          action,
-          quantity: qty,
-          lead_time_days: leadTimeDays,
-          user_name: 'Pharmacy Member',
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/order/action', { drug_id: drugId, action, quantity: qty, lead_time_days: leadTimeDays, user_name: 'Pharmacy Member' })
+      if (res.data) {
+        const data = res.data
         setState(data)
         setSelectedDrug(null)
         setIsEditingQty(false)
@@ -226,13 +208,9 @@ export function HackathonDashboard() {
 
   const handleLeadTimeChange = async (drugId: string, leadTimeDays: number) => {
     try {
-      const res = await fetch(`${API_BASE}/lead_time`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ drug_id: drugId, lead_time_days: leadTimeDays }),
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/lead_time', { drug_id: drugId, lead_time_days: leadTimeDays })
+      if (res.data) {
+        const data = res.data
         setState(data)
       }
     } catch (err) {
@@ -242,13 +220,9 @@ export function HackathonDashboard() {
 
   const handleGlobalLeadTimeChange = async (leadTimeDays: number) => {
     try {
-      const res = await fetch(`${API_BASE}/lead_time_all`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lead_time_days: leadTimeDays }),
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/lead_time_all', { lead_time_days: leadTimeDays })
+      if (res.data) {
+        const data = res.data
         setState(data)
       }
     } catch (err) {
@@ -258,19 +232,9 @@ export function HackathonDashboard() {
 
   const handleBaselineAction = async (drugId: string, action: 'accept' | 'edit' | 'reject', newBaseline?: number) => {
     try {
-      const res = await fetch(`${API_BASE}/baseline/action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          drug_id: drugId,
-          action,
-          new_baseline: newBaseline,
-          reason: 'Sustained demand increase',
-          user_name: 'Pharmacy Member',
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await api.post('/simulation/baseline/action', { drug_id: drugId, action, new_baseline: newBaseline, reason: 'Sustained demand increase', user_name: 'Pharmacy Member' })
+      if (res.data) {
+        const data = res.data
         setState(data)
         fetchTransactions()
       }
@@ -281,9 +245,9 @@ export function HackathonDashboard() {
 
   if (loading || !state) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
+      <div className="flex h-screen items-center justify-center bg-[#f3f5fa] text-slate-900">
         <div className="flex items-center gap-3">
-          <RefreshCw className="animate-spin text-indigo-400" size={24} />
+          <RefreshCw className="animate-spin text-indigo-600" size={24} />
           <span className="font-semibold">Loading Pharmacy Simulation Engine...</span>
         </div>
       </div>
@@ -306,46 +270,39 @@ export function HackathonDashboard() {
   )
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="min-h-screen bg-[#f3f5fa] text-slate-800 p-6 space-y-6">
 
       {/* Header Bar */}
-      <header className="glass-card p-5 space-y-4">
+      <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-indigo-400 font-mono font-semibold">2019 Day-by-Day Live Simulation</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-white gradient-text mt-0.5">
-              Forecast-Driven Pharmacy Demand & Inventory System
-            </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Autonomous inventory tracking, reorder approvals, and lead time simulation
-            </p>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 font-mono">2019 Day-by-Day Simulation</span>
           </div>
-
-          {/* Date Clock Badge */}
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 self-start lg:self-auto shadow-sm">
-            <Calendar size={18} className="text-indigo-400" />
-            <span className="font-bold font-mono text-sm tracking-wide text-white">{formattedDate}</span>
-          </div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 mt-1">
+            Forecast-Driven Pharmacy Demand & Inventory System
+          </h1>
         </div>
 
-        {/* Live Simulation Action Controls & Switches */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/5">
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Live Simulation Clock & Controls */}
+        <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800">
+            <Calendar size={18} className="text-indigo-600" />
+            <span className="font-bold font-mono text-sm tracking-wide">{formattedDate}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
             {status === 'running' ? (
               <button
                 onClick={() => handleControl('paused')}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition text-xs font-bold cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 text-white hover:bg-amber-600 transition text-xs font-bold shadow-sm cursor-pointer"
               >
                 <Pause size={14} /> Pause
               </button>
             ) : (
               <button
                 onClick={() => handleControl('running')}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition text-xs font-bold cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition text-xs font-bold shadow-sm cursor-pointer"
               >
                 <Play size={14} /> Start
               </button>
@@ -353,14 +310,14 @@ export function HackathonDashboard() {
 
             <button
               onClick={handleStep}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition text-xs font-bold border border-slate-700 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-slate-700 hover:bg-slate-100 transition text-xs font-bold border border-slate-300 shadow-sm cursor-pointer"
             >
               <SkipForward size={14} /> Next Day
             </button>
 
             <button
               onClick={handleStepMonth}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-200 hover:bg-indigo-600/50 transition text-xs font-bold border border-indigo-500/40 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition text-xs font-bold shadow-sm cursor-pointer"
               title="Run simulation to the end of current month"
             >
               <Calendar size={14} /> Next Month
@@ -368,52 +325,48 @@ export function HackathonDashboard() {
 
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition text-xs font-bold border border-slate-700 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition text-xs font-bold border border-slate-300 shadow-sm cursor-pointer"
               title="Reset to 2019-01-01"
             >
               <RotateCcw size={14} /> Restart
             </button>
           </div>
 
-          {/* Right Group: Speed & Lead Time Selector */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Speed Selector */}
-            <div className="flex items-center bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs">
-              <span className="text-[11px] text-slate-400 font-semibold px-2">Speed:</span>
-              {['0.25x', '0.50x', '0.75x', '1x'].map((spd) => (
-                <button
-                  key={spd}
-                  onClick={() => handleControl(undefined, spd)}
-                  className={`px-2.5 py-1 rounded font-mono font-bold transition cursor-pointer ${
-                    speed === spd ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {spd}
-                </button>
-              ))}
-            </div>
+          {/* Speed Selector */}
+          <div className="flex items-center bg-white rounded-full p-1 border border-slate-200 text-xs shadow-sm">
+            {['0.25x', '0.50x', '0.75x', '1x'].map((spd) => (
+              <button
+                key={spd}
+                onClick={() => handleControl(undefined, spd)}
+                className={`px-2.5 py-1 rounded-full font-mono font-bold transition cursor-pointer ${
+                  speed === spd ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {spd}
+              </button>
+            ))}
+          </div>
 
-            {/* Global Resupply Lead Time Selector */}
-            <div className="flex items-center gap-1 bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs">
-              <span className="text-[11px] text-slate-400 font-semibold px-2">All Resupply:</span>
-              {[1, 2, 3, 4, 5, 6, 7].map((days) => {
-                const isSelected = drugs.every((d: any) => (d.lead_time_days || 4) === days)
-                return (
-                  <button
-                    key={days}
-                    onClick={() => handleGlobalLeadTimeChange(days)}
-                    className={`px-2 py-1 rounded font-mono font-bold transition cursor-pointer ${
-                      isSelected
-                        ? 'bg-emerald-600 text-white shadow'
-                        : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800'
-                    }`}
-                    title={`Set ${days} Day${days > 1 ? 's' : ''} resupply lead time for ALL drugs`}
-                  >
-                    {days}d
-                  </button>
-                )
-              })}
-            </div>
+          {/* Global Resupply Lead Time Selector (One-click for ALL drugs) */}
+          <div className="flex items-center gap-1 bg-white rounded-full p-1 border border-slate-200 text-xs shadow-sm">
+            <span className="text-[11px] text-slate-500 font-semibold px-2">All Resupply:</span>
+            {[1, 2, 3, 4, 5, 6, 7].map((days) => {
+              const isSelected = drugs.every((d: any) => (d.lead_time_days || 4) === days)
+              return (
+                <button
+                  key={days}
+                  onClick={() => handleGlobalLeadTimeChange(days)}
+                  className={`px-2.5 py-1 rounded-full font-mono font-bold transition cursor-pointer ${
+                    isSelected
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
+                  }`}
+                  title={`Set ${days} Day${days > 1 ? 's' : ''} resupply lead time for ALL drugs`}
+                >
+                  {days}d
+                </button>
+              )
+            })}
           </div>
         </div>
       </header>
@@ -438,48 +391,48 @@ export function HackathonDashboard() {
 
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Healthy</span>
             <CheckCircle2 size={16} className="text-emerald-400" />
           </div>
           <p className="text-2xl font-extrabold text-emerald-400 mt-2">{summary.HEALTHY || 0}</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Watch (≥60%)</span>
             <Activity size={16} className="text-yellow-400" />
           </div>
           <p className="text-2xl font-extrabold text-yellow-400 mt-2">{summary.WATCH || 0}</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Reorder (≥70%)</span>
             <Clock size={16} className="text-orange-400" />
           </div>
           <p className="text-2xl font-extrabold text-orange-400 mt-2">{summary.REPLENISHMENT_RECOMMENDED || 0}</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Stockout Risk</span>
             <AlertTriangle size={16} className="text-red-400" />
           </div>
           <p className="text-2xl font-extrabold text-red-400 mt-2">{summary.STOCKOUT_RISK || 0}</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Emergency</span>
             <Zap size={16} className="text-rose-500" />
           </div>
           <p className="text-2xl font-extrabold text-rose-500 mt-2">{summary.EMERGENCY_REPLENISHMENT || 0}</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Out of Stock</span>
             <PackageCheck size={16} className="text-rose-600" />
           </div>
@@ -488,13 +441,13 @@ export function HackathonDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center border-b border-slate-800 gap-6">
+      <div className="flex items-center border-b border-slate-200 gap-6">
         <button
           onClick={() => setActiveTab('simulation')}
           className={`flex items-center gap-2 pb-3 font-semibold text-sm transition border-b-2 ${
             activeTab === 'simulation'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <Layers size={16} /> Live Simulation
@@ -504,8 +457,8 @@ export function HackathonDashboard() {
           onClick={() => setActiveTab('baselines')}
           className={`flex items-center gap-2 pb-3 font-semibold text-sm transition border-b-2 ${
             activeTab === 'baselines'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <Sliders size={16} /> Baseline Management
@@ -517,7 +470,7 @@ export function HackathonDashboard() {
         <div className="space-y-6">
           {/* Priority Alerts Drawer / Banner */}
           {alertDrugs.length > 0 && (
-            <div className="p-5 rounded-2xl bg-amber-950/30 border border-amber-500/40 space-y-4">
+            <div className="p-5 rounded-2xl bg-amber-50 border border-amber-500/40 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-amber-400">
                   <AlertTriangle size={20} />
@@ -528,9 +481,9 @@ export function HackathonDashboard() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {alertDrugs.map((d: any) => (
-                  <div key={d.drug_id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div key={d.drug_id} className="p-4 rounded-xl bg-white border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="font-black text-lg text-white font-mono">{d.drug_code}</span>
+                      <span className="font-black text-lg text-slate-900 font-mono">{d.drug_code}</span>
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
                           d.risk_level === 'STOCKOUT_RISK' || d.risk_level === 'EMERGENCY_REPLENISHMENT'
@@ -542,13 +495,13 @@ export function HackathonDashboard() {
                       </span>
                     </div>
 
-                    <div className="text-xs text-slate-300 space-y-1 font-mono">
-                      <div className="flex justify-between"><span>Current Stock:</span> <strong className="text-white">{d.current_stock}</strong></div>
+                    <div className="text-xs text-slate-700 space-y-1 font-mono">
+                      <div className="flex justify-between"><span>Current Stock:</span> <strong className="text-slate-900">{d.current_stock}</strong></div>
                       <div className="flex justify-between"><span>Baseline Stock:</span> <span>{d.baseline_stock}</span></div>
                       <div className="flex justify-between"><span>Consumed:</span> <span className="text-amber-400 font-bold">{d.consumed_pct}%</span></div>
-                      <div className="flex justify-between"><span>Forecast 7 Days:</span> <span className="text-indigo-400 font-bold">{d.forecast_7day}</span></div>
+                      <div className="flex justify-between"><span>Forecast 7 Days:</span> <span className="text-indigo-600 font-bold">{d.forecast_7day}</span></div>
                       <div className="flex justify-between"><span>Safety Stock:</span> <span>{d.safety_stock}</span></div>
-                      <div className="flex justify-between border-t border-slate-800 pt-1 font-bold text-white">
+                      <div className="flex justify-between border-t border-slate-200 pt-1 font-bold text-slate-900">
                         <span>Recommended Order:</span> <span className="text-emerald-400">{d.recommended_order} units</span>
                       </div>
                     </div>
@@ -556,13 +509,13 @@ export function HackathonDashboard() {
                     {d.pending_order ? (
                       <div className="p-2 rounded bg-indigo-950/60 border border-indigo-800/50 text-[11px] text-indigo-300 flex items-center justify-between">
                         <span>Shipment Pending ({d.pending_order.quantity} units)</span>
-                        <span className="font-mono text-indigo-400">Arrives: {d.pending_order.expected_arrival}</span>
+                        <span className="font-mono text-indigo-600">Arrives: {d.pending_order.expected_arrival}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 pt-1">
                         <button
                           onClick={() => handleOrderAction(d.drug_id, 'approve')}
-                          className="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
+                          className="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-900 font-bold text-xs transition"
                         >
                           Approve
                         </button>
@@ -586,18 +539,18 @@ export function HackathonDashboard() {
           )}
 
           {/* Main Drugs Inventory Table */}
-          <div className="rounded-2xl bg-slate-900/80 border border-slate-800 overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-lg text-white">All Pharmacy Drugs Inventory State</h3>
-                <p className="text-xs text-slate-400">Daily sales consumption & 7-day forecast stockout prediction</p>
+                <h3 className="font-bold text-lg text-slate-900">All Pharmacy Drugs Inventory State</h3>
+                <p className="text-xs text-slate-500">Daily sales consumption & 7-day forecast stockout prediction</p>
               </div>
-              <span className="text-xs font-mono text-indigo-400">8 Medicines Monitored</span>
+              <span className="text-xs font-mono text-indigo-600">8 Medicines Monitored</span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/60 uppercase text-[10px] text-slate-400 tracking-wider font-semibold border-b border-slate-800">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 uppercase text-[10px] text-slate-500 font-bold tracking-wider font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3.5">Drug Code</th>
                     <th className="p-3.5">Category</th>
@@ -613,20 +566,20 @@ export function HackathonDashboard() {
                     <th className="p-3.5 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-mono">
+                <tbody className="divide-y divide-slate-100 font-mono">
                   {drugs.map((d: any) => {
                     const consumedColor =
-                      d.consumed_pct >= 70 ? 'text-orange-400 font-bold' : d.consumed_pct >= 60 ? 'text-yellow-400' : 'text-slate-300'
+                      d.consumed_pct >= 70 ? 'text-orange-400 font-bold' : d.consumed_pct >= 60 ? 'text-yellow-400' : 'text-slate-700'
                     return (
-                      <tr key={d.drug_id} className="hover:bg-slate-800/40 transition">
-                        <td className="p-3.5 font-extrabold text-white font-sans">
+                      <tr key={d.drug_id} className="hover:bg-slate-50/80 transition">
+                        <td className="p-3.5 font-extrabold text-slate-900 font-sans">
                           {d.drug_code}
                           <p className="text-[10px] text-slate-500 font-normal truncate max-w-[120px]">{d.drug_name}</p>
                         </td>
-                        <td className="p-3.5 font-sans text-slate-400">{d.category}</td>
-                        <td className="p-3.5 text-indigo-400 font-bold">{d.today_sales}</td>
-                        <td className="p-3.5 font-bold text-white">{d.current_stock}</td>
-                        <td className="p-3.5 text-slate-400">{d.baseline_stock}</td>
+                        <td className="p-3.5 font-sans text-slate-500">{d.category}</td>
+                        <td className="p-3.5 text-indigo-600 font-bold">{d.today_sales}</td>
+                        <td className="p-3.5 font-bold text-slate-900">{Math.round(Number(d.current_stock) * 10) / 10}</td>
+                        <td className="p-3.5 text-slate-500">{d.baseline_stock}</td>
                         <td className="p-3.5">
                           <span className={consumedColor}>{d.consumed_pct}%</span>
                           <div className="w-16 h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
@@ -643,7 +596,7 @@ export function HackathonDashboard() {
                           <select
                             value={d.lead_time_days || 4}
                             onChange={(e) => handleLeadTimeChange(d.drug_id, Number(e.target.value))}
-                            className="bg-slate-950 border border-slate-700 text-indigo-300 text-xs rounded px-1.5 py-0.5 font-mono focus:outline-none focus:border-indigo-500 cursor-pointer"
+                            className="bg-white border border-slate-300 text-indigo-700 shadow-sm text-xs rounded px-1.5 py-0.5 font-mono focus:outline-none focus:border-indigo-500 cursor-pointer"
                             title="Set Resupply Lead Time Days"
                           >
                             <option value={1}>⚡ 1 Day</option>
@@ -656,42 +609,42 @@ export function HackathonDashboard() {
                           </select>
                         </td>
                         <td className="p-3.5">
-                          <span className={d.projected_stock < d.safety_stock ? 'text-rose-400 font-bold' : 'text-slate-300'}>
+                          <span className={d.projected_stock < d.safety_stock ? 'text-rose-600 font-bold' : 'text-slate-700'}>
                             {d.projected_stock}
                           </span>
                         </td>
                         <td className="p-3.5">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold font-sans ${
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans ${
                               d.risk_level === 'HEALTHY'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : d.risk_level === 'WATCH'
-                                ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
                                 : d.risk_level === 'REPLENISHMENT_RECOMMENDED'
-                                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
-                                : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
                             }`}
                           >
                             {d.risk_level}
                           </span>
                         </td>
-                        <td className="p-3.5 font-bold text-emerald-400">
+                        <td className="p-3.5 font-bold text-emerald-600">
                           {d.recommended_order > 0 ? `${d.recommended_order} units` : '—'}
                         </td>
                         <td className="p-3.5 text-right font-sans">
                           {d.pending_order ? (
-                            <span className="text-[10px] text-indigo-400 bg-indigo-950/60 px-2 py-1 rounded border border-indigo-800/50">
+                            <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200 font-bold">
                               Incoming ({d.pending_order.quantity})
                             </span>
                           ) : d.recommended_order > 0 ? (
                             <button
                               onClick={() => handleOrderAction(d.drug_id, 'approve')}
-                              className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
+                              className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-sm cursor-pointer"
                             >
                               Reorder
                             </button>
                           ) : (
-                            <span className="text-slate-500 text-[11px]">Healthy</span>
+                            <span className="text-slate-400 text-[11px]">Healthy</span>
                           )}
                         </td>
                       </tr>
@@ -708,29 +661,29 @@ export function HackathonDashboard() {
 
       {/* TAB 2: Baseline Management */}
       {activeTab === 'baselines' && (
-        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-4 shadow-sm">
           <div>
-            <h3 className="text-xl font-extrabold text-white">Baseline Stock Management</h3>
-            <p className="text-xs text-slate-400">
+            <h3 className="text-xl font-extrabold text-slate-900">Baseline Stock Management</h3>
+            <p className="text-xs text-slate-500">
               Baseline stock represents expected normal operational stock. Baseline changes occur on sustained forecast shifts.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {drugs.map((d: any) => (
-              <div key={d.drug_id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+              <div key={d.drug_id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div>
-                  <h4 className="font-extrabold text-white text-base font-mono">{d.drug_code}</h4>
-                  <p className="text-xs text-slate-400">{d.drug_name}</p>
-                  <p className="text-xs text-slate-300 font-mono mt-2">
-                    Current Baseline: <strong className="text-white">{d.baseline_stock} units</strong>
+                  <h4 className="font-extrabold text-slate-900 text-base font-mono">{d.drug_code}</h4>
+                  <p className="text-xs text-slate-500">{d.drug_name}</p>
+                  <p className="text-xs text-slate-700 font-mono mt-2">
+                    Current Baseline: <strong className="text-slate-900">{d.baseline_stock} units</strong>
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleBaselineAction(d.drug_id, 'accept', Math.round(d.baseline_stock * 1.1))}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition"
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-slate-900 font-bold text-xs transition"
                   >
                     +10% Baseline
                   </button>
@@ -744,29 +697,29 @@ export function HackathonDashboard() {
       {/* Edit Quantity & Resupply Lead Time Modal */}
       {isEditingQty && selectedDrug && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-white">Configure Replenishment Order ({selectedDrug.drug_code})</h3>
-            <p className="text-xs text-slate-400">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-slate-900">Configure Replenishment Order ({selectedDrug.drug_code})</h3>
+            <p className="text-xs text-slate-500">
               System recommended order: <strong className="text-emerald-400">{selectedDrug.recommended_order} units</strong>
             </p>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs text-slate-300 font-semibold">Custom Order Quantity (Units)</label>
+                <label className="text-xs text-slate-700 font-semibold">Custom Order Quantity (Units)</label>
                 <input
                   type="number"
                   value={customQty}
                   onChange={(e) => setCustomQty(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl bg-[#f3f5fa] border border-slate-700 text-slate-900 font-mono text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-300 font-semibold">Resupply Lead Time (Supplier Delivery Days)</label>
+                <label className="text-xs text-slate-700 font-semibold">Resupply Lead Time (Supplier Delivery Days)</label>
                 <select
                   value={customLeadTime}
                   onChange={(e) => setCustomLeadTime(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-indigo-300 font-mono text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-indigo-700 shadow-sm font-mono text-sm focus:outline-none focus:border-indigo-500"
                 >
                   <option value={1}>⚡ 1 Day (Express Delivery)</option>
                   <option value={2}>📦 2 Days (Priority Delivery)</option>
@@ -789,13 +742,13 @@ export function HackathonDashboard() {
                     customLeadTime
                   )
                 }
-                className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-950"
+                className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-900 font-bold text-xs transition shadow-lg shadow-emerald-950"
               >
                 Confirm & Approve Order
               </button>
               <button
                 onClick={() => setIsEditingQty(false)}
-                className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+                className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 font-bold text-xs transition"
               >
                 Cancel
               </button>

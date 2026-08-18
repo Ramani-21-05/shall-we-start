@@ -64,7 +64,7 @@ def login(req: LoginRequest):
         if res.data and len(res.data) > 0:
             user = res.data[0]
     except Exception as e:
-        print(f"Notice: Supabase user lookup: {e}")
+        print(f"Notice: Supabase lookup: {e}")
 
     # 2. Fallback to SQLite if Supabase unavailable
     if not user:
@@ -78,7 +78,7 @@ def login(req: LoginRequest):
                 user = dict(r)
             conn.close()
         except Exception as e:
-            print(f"Notice: SQLite fallback user lookup: {e}")
+            print(f"Notice: SQLite fallback: {e}")
 
     if not user:
         _write_log(
@@ -119,7 +119,7 @@ def login(req: LoginRequest):
     )
 
     user_dict = {
-        "id": str(user["id"]),
+        "id": user["id"],
         "email": user["email"],
         "username": user["username"],
         "full_name": user["full_name"],
@@ -261,24 +261,22 @@ def admin_create_user(req: AdminCreateUserRequest, current_user: dict = Depends(
 
     created_user = sb_res.data[0]
 
-    # Dispatch Email for non-ADMIN accounts (Email ID, Username, Password)
-    email_res = None
-    if role_upper != "ADMIN":
-        email_res = send_credentials_email(
-            to_email=req_email,
-            username=req_username,
-            password=initial_password,
-            full_name=req.full_name,
-            role=role_upper,
-        )
-        _write_log(
-            event_type="EMAIL_SENT",
-            message=f"Welcome credentials email sent to new user '{req_username}' at '{req_email}'.",
-            username=current_user.get("username", "admin"),
-            user_role=current_user.get("role", "ADMIN"),
-            status="SUCCESS",
-            detail=f"New user: {req_username} | Role: {role_upper} | Email: {req_email}",
-        )
+    # Dispatch Email to new user AND Admin notification copy
+    email_res = send_credentials_email(
+        to_email=req_email,
+        username=req_username,
+        password=initial_password,
+        full_name=req.full_name,
+        role=role_upper,
+    )
+    _write_log(
+        event_type="EMAIL_SENT",
+        message=f"Welcome credentials email sent to new user '{req_username}' ({req_email}) & Admin.",
+        username=current_user.get("username", "admin"),
+        user_role=current_user.get("role", "ADMIN"),
+        status="SUCCESS",
+        detail=f"New user: {req_username} | Role: {role_upper} | Email: {req_email}",
+    )
 
     _write_log(
         event_type="ADMIN_ACTION",

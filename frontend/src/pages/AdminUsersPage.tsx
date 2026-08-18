@@ -151,13 +151,13 @@ export function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Page Title */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Shield className="text-indigo-400" size={24} />
-            <h1 className="text-2xl font-bold gradient-text">User Provisioning & Access Control</h1>
+            <h1 className="text-2xl font-bold text-white gradient-text">User Provisioning & Access Control</h1>
           </div>
           <p className="text-xs text-slate-400">
             Admin console for provisioning, managing, emailing credentials, toggling active status, and deleting user accounts
@@ -199,7 +199,7 @@ export function AdminUsersPage() {
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
                   placeholder="e.g. Sarah Jenkins"
-                  className="w-full bg-slate-900/80 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -216,7 +216,7 @@ export function AdminUsersPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="sarah@pharmacast.com"
-                  className="w-full bg-slate-900/80 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -231,7 +231,7 @@ export function AdminUsersPage() {
                 value={username}
                 onChange={e => setUsername(e.target.value.toLowerCase())}
                 placeholder="sarah_j"
-                className="w-full bg-slate-900/80 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
 
@@ -242,11 +242,11 @@ export function AdminUsersPage() {
               <select
                 value={role}
                 onChange={e => setRole(e.target.value as UserRole)}
-                className="w-full bg-slate-900/80 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                className="w-full bg-white border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
-                <option value="STAFF" className="bg-slate-900">STAFF — Inventory & Replenishment Only</option>
-                <option value="MARKETING" className="bg-slate-900">MARKETING — Dashboard, Forecast & Strategy</option>
-                <option value="ADMIN" className="bg-slate-900">ADMIN — Full System Superuser</option>
+                <option value="STAFF" >STAFF — Inventory & Replenishment Only</option>
+                <option value="MARKETING" >MARKETING — Dashboard, Forecast & Strategy</option>
+                <option value="ADMIN" >ADMIN — Full System Superuser</option>
               </select>
             </div>
 
@@ -297,7 +297,7 @@ export function AdminUsersPage() {
                   <Key size={12} /> Generated Initial Temporary Password (Sent via Email):
                 </p>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-base font-bold text-emerald-300 bg-slate-900 px-3 py-1 rounded border border-emerald-500/30 select-all">
+                  <span className="font-mono text-base font-bold text-emerald-300 bg-white px-3 py-1 rounded border border-emerald-500/30 select-all">
                     {createdResult.initialPassword}
                   </span>
                   <button
@@ -451,7 +451,7 @@ export function AdminUsersPage() {
                           title={isSelf ? 'Cannot delete your own logged-in Admin account' : `Delete ${u.username}`}
                           className={`px-2 py-1 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1 border ${
                             isSelf
-                              ? 'bg-slate-900/50 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
+                              ? 'bg-white/50 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
                               : isDeletingThis
                               ? 'bg-red-950/80 text-red-400 border-red-800 cursor-wait'
                               : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/25 hover:text-red-200 cursor-pointer'

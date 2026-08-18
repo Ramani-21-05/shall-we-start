@@ -69,7 +69,7 @@ export function AuthPage() {
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
                 placeholder="ranjeet or 727823tuad122@skct.edu.in"
-                className="w-full bg-slate-900/80 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
@@ -86,7 +86,7 @@ export function AuthPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-900/80 border border-white/10 rounded-lg pl-9 pr-9 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-white/10 rounded-lg pl-9 pr-9 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
               />
               <button
                 type="button"

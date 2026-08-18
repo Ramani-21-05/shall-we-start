@@ -99,25 +99,26 @@ export function PastPerformancePage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
-            <History size={20} className="text-cyan-300" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold gradient-text">Past Performance & Trends</h1>
-            <p className="text-slate-400 text-xs mt-0.5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
+            <History size={22} /> Past Performance
+          </h1>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <p className="text-slate-400 text-sm">
               Historical Sales Analysis · 2014–2019 · {DRUG_FULL_NAMES[drug]}
             </p>
+
+
           </div>
         </div>
         <select
           value={drug}
           onChange={e => setDrug(e.target.value)}
-          className="glass-card-sm px-4 py-2 text-sm text-white bg-transparent cursor-pointer"
+          className="glass-card-sm px-4 py-2 text-sm text-slate-900 bg-white border border-slate-300 cursor-pointer"
         >
           {DRUGS.map(d => (
-            <option key={d} value={d} className="bg-slate-900">{d}</option>
+            <option key={d} value={d} >{d}</option>
           ))}
         </select>
       </div>
@@ -190,10 +191,10 @@ export function PastPerformancePage() {
             </div>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={hist!.yoy_series} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis dataKey="year" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={60} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [(v ?? 0).toLocaleString(), 'Annual Sales']} />
+                <YAxis tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} width={60} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [Number(v).toLocaleString(), 'Annual Sales']} />
                 <Bar dataKey="total_sales" radius={[4, 4, 0, 0]} maxBarSize={60}>
                   {hist!.yoy_series.map(entry => (
                     <Cell key={entry.year} fill={YEAR_COLORS[String(entry.year)] ?? '#6366f1'} />
@@ -212,19 +213,19 @@ export function PastPerformancePage() {
             <p className="text-xs text-slate-500 mb-4">72 months of raw hourly data aggregated to monthly totals</p>
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={hist!.monthly_series} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
                   dataKey="label"
-                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }}
                   ticks={trendTicks}
                   tickFormatter={v => v.slice(0, 4)}
                   axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
                   tickLine={false}
                 />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={55} />
+                <YAxis tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} width={55} />
                 <Tooltip
                   contentStyle={TOOLTIP_STYLE}
-                  formatter={(v: any) => [(v ?? 0).toLocaleString(), 'Monthly Sales']}
+                  formatter={(v: any) => [Number(v).toLocaleString(), 'Monthly Sales']}
                   labelFormatter={l => `Period: ${l}`}
                 />
                 {/* Year boundary reference lines */}
@@ -255,10 +256,10 @@ export function PastPerformancePage() {
             </p>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={hist!.yoy_monthly} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="month_name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} width={50} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any, name: any) => [(v ?? 0).toLocaleString(), name]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="month_name" tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} width={50} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any, name: any) => [Number(v).toLocaleString(), name]} />
                 <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8', paddingTop: 4 }} />
                 {['2014', '2015', '2016', '2017', '2018', '2019'].map(yr => (
                   <Bar key={yr} dataKey={yr} fill={YEAR_COLORS[yr]} maxBarSize={16} radius={[2, 2, 0, 0]} />

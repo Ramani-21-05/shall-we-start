@@ -5,7 +5,6 @@ export interface Product {
   champion_model_name: string
   algorithm_family: string
   training_cutoff_date: string
-  anomaly_detection_year: number
 }
 
 export interface ChampionSummary {
@@ -33,7 +32,6 @@ export interface DashboardSummary {
     avg_overstock_risk_pct: number
   }
   training_cutoff: string
-  anomaly_detection_year: number
 }
 
 export interface ModelRanking {
@@ -72,18 +70,7 @@ export interface ShapWeight {
   feature_rank: number
 }
 
-export interface AnomalyResult {
-  drug_code: string
-  anomaly_date: string
-  actual_demand: number
-  expected_demand: number
-  residual: number
-  anomaly_score: number
-  anomaly_type: string
-  severity: 'HIGH' | 'MEDIUM' | 'LOW'
-  is_anomaly: boolean
-  detection_stage: string
-}
+
 
 export interface InventoryRecommendation {
   drug_code: string

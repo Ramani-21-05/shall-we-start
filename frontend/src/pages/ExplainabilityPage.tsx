@@ -62,25 +62,22 @@ export function ExplainabilityPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
-            <Lightbulb size={20} className="text-amber-300" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold gradient-text">Model Explainability & SHAP Analysis</h1>
-            <p className="text-slate-400 text-xs mt-0.5">
-              Understanding why predictions occur · {DRUG_FULL_NAMES[drug]}
-            </p>
-          </div>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+            <Lightbulb size={22} className="text-indigo-600" /> Model Explainability & Feature SHAP Analysis
+          </h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium">
+            Understanding why predictions occur · {DRUG_FULL_NAMES[drug]}
+          </p>
         </div>
         <select
           value={drug}
           onChange={e => setDrug(e.target.value)}
-          className="glass-card-sm px-4 py-2 text-sm text-white bg-transparent cursor-pointer"
+          className="bg-white border border-slate-300 rounded-xl px-4 py-2 text-sm text-indigo-700 font-bold focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
         >
           {DRUGS.map(d => (
-            <option key={d} value={d} className="bg-slate-900">{d}</option>
+            <option key={d} value={d}>{d}</option>
           ))}
         </select>
       </div>
@@ -89,24 +86,24 @@ export function ExplainabilityPage() {
         <>
           {/* ── Active Model Summary Card ── */}
           <div className="max-w-md">
-            <div className="glass-card p-5 border-l-4 border-indigo-500 flex flex-col justify-between space-y-3">
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 border-l-4 border-l-indigo-600 shadow-sm flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
                   <Award size={14} /> Active Model
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold font-mono">
                   CHAMPION
                 </span>
               </div>
               <div>
-                <p className="text-lg font-bold text-white">
+                <p className="text-lg font-black text-slate-900">
                   {championModel?.model_name ?? 'LightGBM + SHAP'}
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Holdout RMSLE: <span className="font-mono text-indigo-300 font-semibold">{championModel?.rmsle?.toFixed(4) ?? '0.5014'}</span> · MAE: <span className="font-mono text-cyan-300 font-semibold">{championModel?.mae?.toFixed(2) ?? '2.29'}</span>
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                  Holdout RMSLE: <span className="font-mono text-indigo-600 font-bold">{championModel?.rmsle?.toFixed(4) ?? '0.5014'}</span> · MAE: <span className="font-mono text-cyan-600 font-bold">{championModel?.mae?.toFixed(2) ?? '2.29'}</span>
                 </p>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-400 font-medium">
                 Evaluation: {championModel?.evaluation_set ?? '2019 Holdout'}
               </p>
             </div>
@@ -114,14 +111,14 @@ export function ExplainabilityPage() {
 
           {/* ── Feature Domain Share Cards ── */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-emerald-400" /> Feature Domain Contribution Share
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-emerald-600" /> Feature Domain Contribution Share
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {summary?.domain_breakdown?.map(item => (
-                <div key={item.domain} className="glass-card p-4 relative overflow-hidden">
+                <div key={item.domain} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm relative overflow-hidden">
                   <div
-                    className="absolute top-0 left-0 bottom-0 opacity-15"
+                    className="absolute top-0 left-0 bottom-0 opacity-10"
                     style={{
                       width: `${item.percentage}%`,
                       background: DOMAIN_COLORS[item.domain] ?? '#6366f1'
@@ -129,11 +126,11 @@ export function ExplainabilityPage() {
                   />
                   <div className="relative z-10 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-medium text-slate-300">{item.domain} Features</p>
-                      <p className="text-xl font-bold text-white font-mono mt-0.5">{item.percentage}%</p>
+                      <p className="text-xs font-semibold text-slate-600">{item.domain} Features</p>
+                      <p className="text-xl font-black text-slate-900 font-mono mt-0.5">{item.percentage}%</p>
                     </div>
                     <span
-                      className="w-3 h-3 rounded-full"
+                      className="w-3 h-3 rounded-full shadow-sm"
                       style={{ background: DOMAIN_COLORS[item.domain] ?? '#6366f1' }}
                     />
                   </div>
@@ -143,28 +140,28 @@ export function ExplainabilityPage() {
           </div>
 
           {/* ── SHAP Bar Chart ── */}
-          <div className="glass-card p-6 space-y-3">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-white">Top 10 Feature Importance (|SHAP| Values)</p>
-                <p className="text-xs text-slate-400">Mean absolute SHAP value measures total contribution to predicted sales volume</p>
+                <p className="text-base font-bold text-slate-900">Top 10 Feature Importance (|SHAP| Values)</p>
+                <p className="text-xs text-slate-500">Mean absolute SHAP value measures total contribution to predicted sales volume</p>
               </div>
             </div>
 
-            <ResponsiveContainer width="100%" height={340}>
+            <ResponsiveContainer width="100%" height={360}>
               <BarChart data={chartData} layout="vertical" barSize={18} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                <XAxis type="number" tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <YAxis
                   type="category"
                   dataKey="feature"
                   width={140}
-                  tick={{ fill: '#e2e8f0', fontSize: 11, fontFamily: 'monospace' }}
+                  tick={{ fill: '#0f172a', fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip
-                  contentStyle={{ background: 'hsl(245 40% 12%)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '0.5rem', color: '#e2e8f0', fontSize: 12 }}
+                  contentStyle={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '0.75rem', color: '#0f172a', fontSize: 12, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   formatter={(v, _, props) => [
                     `${v} (Domain: ${(props as any)?.payload?.domain})`,
                     'Mean |SHAP| Impact'
@@ -180,15 +177,15 @@ export function ExplainabilityPage() {
           </div>
 
           {/* ── Feature Importance Table ── */}
-          <div className="glass-card overflow-hidden">
-            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-              <p className="text-sm font-semibold text-white">Feature Weight Breakdown Table</p>
-              <p className="text-xs text-slate-400">Sorted by Mean |SHAP| Value</p>
+          <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <p className="text-base font-bold text-slate-900">Feature Weight Breakdown Table</p>
+              <p className="text-xs text-slate-500">Sorted by Mean |SHAP| Value</p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-wider">
+              <table className="w-full text-xs text-slate-700">
+                <thead className="bg-slate-50 uppercase text-[10px] text-slate-500 tracking-wider font-bold border-b border-slate-200">
+                  <tr>
                     <th className="px-5 py-3 text-left">Rank</th>
                     <th className="px-5 py-3 text-left">Feature Name</th>
                     <th className="px-5 py-3 text-left">Domain</th>
@@ -196,21 +193,21 @@ export function ExplainabilityPage() {
                     <th className="px-5 py-3 text-right">Tree Split Gain</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 font-mono">
                   {shapWeights?.map((f, i) => (
-                    <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                      <td className="px-5 py-3 font-mono text-slate-400 text-xs">#{f.feature_rank}</td>
-                      <td className="px-5 py-3 font-mono text-indigo-300 text-xs font-semibold">{f.feature}</td>
-                      <td className="px-5 py-3">
+                    <tr key={i} className="hover:bg-slate-50/80 transition">
+                      <td className="px-5 py-3 text-slate-500 font-bold">#{f.feature_rank}</td>
+                      <td className="px-5 py-3 text-indigo-700 font-bold font-sans">{f.feature}</td>
+                      <td className="px-5 py-3 font-sans">
                         <span
-                          className="px-2.5 py-1 rounded-full text-[11px] font-medium text-white"
-                          style={{ background: (DOMAIN_COLORS[f.feature_domain] ?? '#6366f1') + '33', border: `1px solid ${DOMAIN_COLORS[f.feature_domain] ?? '#6366f1'}55` }}
+                          className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-slate-800"
+                          style={{ background: (DOMAIN_COLORS[f.feature_domain] ?? '#6366f1') + '22', border: `1px solid ${DOMAIN_COLORS[f.feature_domain] ?? '#6366f1'}44` }}
                         >
                           {f.feature_domain}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right font-mono text-emerald-300 font-bold">{f.mean_abs_shap.toFixed(5)}</td>
-                      <td className="px-5 py-3 text-right font-mono text-slate-400">{f.lgb_gain != null ? Math.round(f.lgb_gain).toLocaleString() : '—'}</td>
+                      <td className="px-5 py-3 text-right text-emerald-600 font-bold">{f.mean_abs_shap.toFixed(5)}</td>
+                      <td className="px-5 py-3 text-right text-slate-500">{f.lgb_gain != null ? Math.round(f.lgb_gain).toLocaleString() : '—'}</td>
                     </tr>
                   ))}
                 </tbody>

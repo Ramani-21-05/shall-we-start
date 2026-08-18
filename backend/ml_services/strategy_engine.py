@@ -66,6 +66,9 @@ ASSOCIATION_RULES = [
 ]
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=1)
 def load_dataset() -> pd.DataFrame:
     csv_path = os.path.join(BASE_DIR, "times_series", "dataset", "saleshourly.csv")
     if os.path.exists(csv_path):
@@ -73,7 +76,39 @@ def load_dataset() -> pd.DataFrame:
     return pd.DataFrame()
 
 
-def generate_product_strategy(drug_code: str, df: pd.DataFrame | None = None, target_month: int | None = None) -> dict:
+@lru_cache(maxsize=1)
+def fetch_all_2020_forecasts() -> dict[str, dict[int, float]]:
+    """Fetches 2020 forecast values for ALL drugs in ONE single Supabase query for maximum speed."""
+    result: dict[str, dict[int, float]] = {}
+    try:
+        from core.database import get_supabase
+        supabase = get_supabase()
+        res = (
+            supabase.table("forecast_results")
+            .select("drug_code, forecast_date, p50_demand")
+            .gte("forecast_date", "2020-01-01")
+            .lte("forecast_date", "2020-12-31")
+            .execute()
+        )
+        if res.data:
+            for row in res.data:
+                dc = row["drug_code"].upper()
+                m = int(str(row["forecast_date"])[5:7])
+                p50 = float(row.get("p50_demand", 0))
+                if dc not in result:
+                    result[dc] = {}
+                result[dc][m] = round(result[dc].get(m, 0) + p50, 2)
+    except Exception as e:
+        print(f"Notice: Supabase bulk forecast query fallback: {e}")
+    return result
+
+
+def generate_product_strategy(
+    drug_code: str,
+    df: pd.DataFrame | None = None,
+    target_month: int | None = None,
+    forecast_dict: dict[int, float] | None = None,
+) -> dict:
     if df is None or df.empty:
         df = load_dataset()
 
@@ -119,20 +154,12 @@ def generate_product_strategy(drug_code: str, df: pd.DataFrame | None = None, ta
 
     yoy_growth_pct = round(yoy_growth * 100, 1)
 
-    # Fetch real 2020 AI model P50 forecast predictions from Supabase (matching Demand Forecast page)
-    supabase_monthly_forecast = {}
-    try:
-        from ml_services.forecast_service import get_forecast_data
-        fc_records = get_forecast_data(d_upper, year="2020")
-        if fc_records:
-            df_fc = pd.DataFrame(fc_records)
-            df_fc['month'] = pd.to_datetime(df_fc['date']).dt.month
-            mo_sums = df_fc.groupby('month')['p50_demand'].sum()
-            for m in range(1, 13):
-                if m in mo_sums:
-                    supabase_monthly_forecast[m] = round(float(mo_sums[m]), 2)
-    except Exception as e:
-        print(f"Notice: Supabase forecast query for strategy engine fallback: {e}")
+    # Fetch real 2020 AI model P50 forecast predictions from pre-fetched bulk cache or single lookup
+    if forecast_dict is not None:
+        supabase_monthly_forecast = forecast_dict
+    else:
+        all_fc = fetch_all_2020_forecasts()
+        supabase_monthly_forecast = all_fc.get(d_upper, {})
 
     # 12-Month Timeline Array (Jan to Dec)
     monthly_timeline = []
@@ -349,6 +376,7 @@ def generate_product_strategy(drug_code: str, df: pd.DataFrame | None = None, ta
     }
 
 
+@lru_cache(maxsize=16)
 def get_strategy_overview(target_month: int | None = None) -> dict:
     df = load_dataset()
     products = []
@@ -357,8 +385,11 @@ def get_strategy_overview(target_month: int | None = None) -> dict:
     selected_month_num = target_month if (target_month and 1 <= target_month <= 12) else 9
     selected_month_name = MONTH_NAMES[selected_month_num - 1]
 
+    # Bulk fetch 2020 forecasts once for all 8 drugs
+    all_fc = fetch_all_2020_forecasts()
+
     for d in DRUGS:
-        strat = generate_product_strategy(d, df, target_month=selected_month_num)
+        strat = generate_product_strategy(d, df, target_month=selected_month_num, forecast_dict=all_fc.get(d, {}))
         if strat:
             products.append(strat)
             quadrant_counts[strat["quadrant"]] = quadrant_counts.get(strat["quadrant"], 0) + 1

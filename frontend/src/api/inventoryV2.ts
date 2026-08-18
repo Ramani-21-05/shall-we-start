@@ -1,7 +1,7 @@
 // src/api/inventoryV2.ts
 import { getErrorMessage } from '@/utils/errorUtils'
 
-const API_BASE = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api/v2/inventory`
+const API_BASE = 'http://localhost:8000/api/v2/inventory'
 
 export interface ForecastDetails {
   tomorrow: number

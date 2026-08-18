@@ -1,5 +1,5 @@
 // src/pages/LogsPage.tsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import api from "@/api/client";
 import {
   FileText, RefreshCw, Search, Filter, ChevronDown,
@@ -152,7 +152,7 @@ export function LogsPage() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="p-6 space-y-6 max-w-screen-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
@@ -196,7 +196,7 @@ export function LogsPage() {
             className="appearance-none pl-3 pr-8 py-1.5 rounded-lg bg-white/10 border border-white/20 text-slate-200 text-xs focus:outline-none focus:border-indigo-400 cursor-pointer"
           >
             {EVENT_TYPES.map((t) => (
-              <option key={t} value={t} className="bg-slate-900">{t === "ALL" ? "All Event Types" : t}</option>
+              <option key={t} value={t} >{t === "ALL" ? "All Event Types" : t}</option>
             ))}
           </select>
           <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -210,7 +210,7 @@ export function LogsPage() {
             className="appearance-none pl-3 pr-8 py-1.5 rounded-lg bg-white/10 border border-white/20 text-slate-200 text-xs focus:outline-none focus:border-indigo-400 cursor-pointer"
           >
             {STATUSES.map((s) => (
-              <option key={s} value={s} className="bg-slate-900">{s === "ALL" ? "All Statuses" : s}</option>
+              <option key={s} value={s} >{s === "ALL" ? "All Statuses" : s}</option>
             ))}
           </select>
           <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -236,7 +236,7 @@ export function LogsPage() {
             className="appearance-none pl-3 pr-8 py-1.5 rounded-lg bg-white/10 border border-white/20 text-slate-200 text-xs focus:outline-none focus:border-indigo-400 cursor-pointer"
           >
             {[50, 100, 200, 500, 1000].map((n) => (
-              <option key={n} value={n} className="bg-slate-900">Last {n}</option>
+              <option key={n} value={n} >Last {n}</option>
             ))}
           </select>
           <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -290,9 +290,8 @@ export function LogsPage() {
                   const isExpanded = expandedRow === idx;
 
                   return (
-                    <>
+                    <Fragment key={log.id || `log-${idx}`}>
                       <tr
-                        key={idx}
                         onClick={() => setExpandedRow(isExpanded ? null : idx)}
                         className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${idx % 2 === 0 ? '' : 'bg-white/[0.02]'}`}
                       >
@@ -348,7 +347,7 @@ export function LogsPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })
               )}

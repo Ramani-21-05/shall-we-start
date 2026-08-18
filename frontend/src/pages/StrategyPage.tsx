@@ -81,7 +81,7 @@ export function StrategyPage() {
       </div>
 
       {/* ── Interactive Month Selector Bar (Jan to Dec) ── */}
-      <div className="glass-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-indigo-500/30 bg-slate-900/90">
+      <div className="glass-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-indigo-500/30 bg-white">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
             <Calendar size={18} />
@@ -100,7 +100,7 @@ export function StrategyPage() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 selectedMonth === m.num
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/40 border border-indigo-400/40 scale-105'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  : 'text-slate-600 hover:text-indigo-700 hover:bg-slate-200/80'
               }`}
             >
               {m.name}
@@ -281,10 +281,10 @@ export function StrategyPage() {
             <select
               value={selectedDrug}
               onChange={e => setSelectedDrug(e.target.value)}
-              className="glass-card-sm px-3 py-1.5 text-xs text-white bg-transparent cursor-pointer self-start"
+              className="glass-card-sm px-3 py-1.5 text-xs text-slate-900 bg-white border border-slate-300 cursor-pointer self-start"
             >
               {DRUGS.map(d => (
-                <option key={d} value={d} className="bg-slate-900">{d} - {DRUG_FULL_NAMES[d]}</option>
+                <option key={d} value={d} >{d} - {DRUG_FULL_NAMES[d]}</option>
               ))}
             </select>
           </div>

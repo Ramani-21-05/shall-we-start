@@ -17,17 +17,21 @@ def send_credentials_email(
     password: str,
     full_name: str = "Team Member",
     role: str = "STAFF",
+    admin_email: str | None = None,
 ) -> dict:
     """
-    Sends an HTML email to `to_email` containing:
-    - Email ID
-    - Username
-    - Password (Temporary initial password)
-    - System Role & Login URL
+    Sends an HTML email containing login credentials to `to_email`
+    AND dispatches an admin notification copy to `admin_email` (or settings.ADMIN_EMAIL).
     """
 
     subject = "Your PharmaCast Platform Login Credentials"
     login_url = f"{settings.APP_URL}/login"
+    target_admin = admin_email or settings.ADMIN_EMAIL or settings.SMTP_USER
+
+    # Build recipient list (recipient + admin)
+    recipients = [to_email]
+    if target_admin and target_admin.lower() not in [e.lower() for e in recipients]:
+        recipients.append(target_admin)
 
     # HTML Email Template
     html_body = f"""
@@ -98,7 +102,8 @@ def send_credentials_email(
     # Print clean dispatch log in server console
     print("\n" + "=" * 60)
     print("[EMAIL DISPATCHER] Sending Account Credentials")
-    print(f"   To Email ID  : {to_email}")
+    print(f"   To User      : {to_email}")
+    print(f"   Admin Copy   : {target_admin}")
     print(f"   Username     : {username}")
     print(f"   Role         : {role}")
     print(f"   Password     : {password}")
@@ -106,36 +111,48 @@ def send_credentials_email(
 
     # Try SMTP Dispatch if credentials configured
     smtp_sent = False
-    error_msg = None
 
     if settings.SMTP_USER and settings.SMTP_PASSWORD:
         try:
             sender_address = settings.SMTP_USER if "gmail.com" in settings.SMTP_HOST.lower() else (settings.SMTP_FROM_EMAIL or settings.SMTP_USER)
 
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = sender_address
-            msg["To"] = to_email
+            for recipient in recipients:
+                is_admin_copy = (recipient.lower() == target_admin.lower() and recipient.lower() != to_email.lower())
+                msg_subject = f"[ADMIN COPY] {subject} - {to_email}" if is_admin_copy else subject
 
-            part = MIMEText(html_body, "html")
-            msg.attach(part)
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = msg_subject
+                msg["From"] = sender_address
+                msg["To"] = recipient
 
-            # Support Port 465 (SSL) and Port 587 (TLS/STARTTLS)
-            if settings.SMTP_PORT == 465:
-                with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=12) as server:
-                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                    server.sendmail(sender_address, [to_email], msg.as_string())
-            else:
-                with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=12) as server:
-                    server.ehlo()
-                    server.starttls()
-                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                    server.sendmail(sender_address, [to_email], msg.as_string())
+                # Prepend Admin notification banner if recipient is Admin copy
+                if is_admin_copy:
+                    admin_banner = f"""
+                    <div style="background: #1e1b4b; border: 1px solid #4338ca; color: #a5b4fc; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 12px;">
+                      📌 <strong>ADMIN NOTIFICATION COPY:</strong> Credentials dispatched for user <strong>{full_name} ({to_email})</strong> [Role: {role}].
+                    </div>
+                    """
+                    body_content = html_body.replace('<div class="header">', admin_banner + '<div class="header">')
+                else:
+                    body_content = html_body
+
+                part = MIMEText(body_content, "html")
+                msg.attach(part)
+
+                if settings.SMTP_PORT == 465:
+                    with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=12) as server:
+                        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                        server.sendmail(sender_address, [recipient], msg.as_string())
+                else:
+                    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=12) as server:
+                        server.ehlo()
+                        server.starttls()
+                        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                        server.sendmail(sender_address, [recipient], msg.as_string())
 
             smtp_sent = True
-            print(f"[OK] Real SMTP Email successfully delivered to {to_email}")
+            print(f"[OK] Real SMTP Email successfully delivered to {', '.join(recipients)}")
         except Exception as e:
-            error_msg = str(e)
             print(f"[WARNING] SMTP delivery notice ({e}). Logged to console instead.")
     else:
         print("[INFO] SMTP_USER/SMTP_PASSWORD not set in environment. Email logged to console.")
@@ -143,7 +160,9 @@ def send_credentials_email(
     return {
         "status": "sent" if (smtp_sent or not settings.SMTP_USER) else "failed",
         "to_email": to_email,
+        "admin_email": target_admin,
         "username": username,
+        "recipients": recipients,
         "smtp_delivered": smtp_sent,
-        "notice": "Real SMTP delivered" if smtp_sent else "Logged to server console (Add SMTP_USER in .env for real inbox delivery)",
+        "notice": f"Real SMTP delivered to {', '.join(recipients)}" if smtp_sent else "Logged to server console",
     }

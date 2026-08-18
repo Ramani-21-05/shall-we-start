@@ -15,7 +15,6 @@ Dataset Year: 2019
 
 import os
 import sys
-import sqlite3
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -110,18 +109,90 @@ INITIAL_DRUGS = [
 DB_PATH = os.path.join(os.path.dirname(__file__), "data", "pharmacy_hackathon.db")
 
 
+import sqlite3
+
+_MEM_CONN = None
+
+
 def get_sqlite_conn():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, timeout=30.0)
-    conn.row_factory = sqlite3.Row
-    return conn
+    global _MEM_CONN
+    if _MEM_CONN is not None:
+        try:
+            _MEM_CONN.execute("SELECT 1")
+            return _MEM_CONN
+        except Exception:
+            _MEM_CONN = None
+
+    _MEM_CONN = sqlite3.connect(":memory:", check_same_thread=False)
+    _MEM_CONN.row_factory = sqlite3.Row
+    setup_sqlite_schema_on_conn(_MEM_CONN)
+    _seed_in_memory_defaults(_MEM_CONN)
+    return _MEM_CONN
 
 
-def setup_sqlite_schema():
-    print("Setting up local SQLite schema...")
-    conn = get_sqlite_conn()
+def _seed_in_memory_defaults(conn):
     cur = conn.cursor()
+    for d in INITIAL_DRUGS:
+        cur.execute(
+            "INSERT OR IGNORE INTO drugs (drug_id, drug_code, drug_name, category) VALUES (?, ?, ?, ?)",
+            (d["drug_id"], d["drug_code"], d["drug_name"], d["category"])
+        )
+        cur.execute(
+            """
+            INSERT OR IGNORE INTO inventory 
+            (drug_id, baseline_stock, current_stock, safety_stock, lead_time_days, incoming_stock, updated_at)
+            VALUES (?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
+            """,
+            (d["drug_id"], d["baseline_stock"], d["starting_stock"], d["safety_stock"], d["lead_time_days"])
+        )
 
+    cur.execute("INSERT OR IGNORE INTO simulation_state (key, value) VALUES ('current_date', '2019-01-01')")
+    cur.execute("INSERT OR IGNORE INTO simulation_state (key, value) VALUES ('status', 'paused')")
+    cur.execute("INSERT OR IGNORE INTO simulation_state (key, value) VALUES ('speed', '1x')")
+    conn.commit()
+
+    _seed_2019_daily_sales_on_conn(conn)
+
+
+def _seed_2019_daily_sales_on_conn(conn):
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) as cnt FROM daily_sales_2019")
+    if cur.fetchone()["cnt"] > 0:
+        return
+
+    dates = pd.date_range("2019-01-01", "2019-12-31", freq="D")
+    rng = np.random.default_rng(42)
+    base_means = {"M01AB": 12, "M01AE": 8, "N02BA": 17, "N02BE": 25, "N05B": 5, "N05C": 4, "R03": 20, "R06": 9}
+
+    sales_records = []
+    forecast_records = []
+
+    for dt in dates:
+        date_str = dt.strftime("%Y-%m-%d")
+        for d in INITIAL_DRUGS:
+            drug = d["drug_id"]
+            mean_val = base_means.get(drug, 10)
+            weekday_mult = 1.2 if dt.weekday() in [4, 5] else 0.95
+            sales_val = round(max(1.0, float(rng.normal(loc=mean_val * weekday_mult, scale=mean_val * 0.2))), 1)
+
+            p50_val = round(sales_val * (1.0 + float(rng.uniform(-0.06, 0.06))), 1)
+            p10_val = round(p50_val * 0.85, 1)
+            p90_val = round(p50_val * 1.15, 1)
+
+            f_7day_quantity = round(p50_val * 7.0, 1)
+            lower_bound_7day = round(p10_val * 7.0, 1)
+            upper_bound_7day = round(p90_val * 7.0, 1)
+
+            sales_records.append((date_str, drug, sales_val))
+            forecast_records.append((drug, date_str, f_7day_quantity, lower_bound_7day, upper_bound_7day))
+
+    cur.executemany("INSERT OR IGNORE INTO daily_sales_2019 (date, drug_id, sales_qty) VALUES (?, ?, ?)", sales_records)
+    cur.executemany("INSERT OR IGNORE INTO forecasts (drug_id, forecast_date, forecast_quantity, lower_bound, upper_bound) VALUES (?, ?, ?, ?, ?)", forecast_records)
+    conn.commit()
+
+
+def setup_sqlite_schema_on_conn(conn):
+    cur = conn.cursor()
     cur.executescript("""
     CREATE TABLE IF NOT EXISTS drugs (
         drug_id TEXT PRIMARY KEY,
@@ -245,7 +316,6 @@ def setup_sqlite_schema():
     );
     """)
     conn.commit()
-    conn.close()
     print("  Local SQLite schema initialized.")
 
 
@@ -272,7 +342,6 @@ def seed_drugs_and_inventory():
     cur.execute("INSERT OR REPLACE INTO simulation_state (key, value) VALUES ('status', 'paused')")
     cur.execute("INSERT OR REPLACE INTO simulation_state (key, value) VALUES ('speed', '1x')")
     conn.commit()
-    conn.close()
 
     try:
         sb = get_supabase()
@@ -415,7 +484,6 @@ def seed_2019_daily_sales():
     cur.executemany("INSERT OR REPLACE INTO forecasts (drug_id, forecast_date, forecast_quantity, lower_bound, upper_bound) VALUES (?, ?, ?, ?, ?)", forecast_records)
 
     conn.commit()
-    conn.close()
     print(f"  Seeded {len(sales_records)} daily actual sales and forecast records for 2019 (2019-01-01 to 2019-12-31).")
 
 
@@ -481,7 +549,9 @@ def seed_anomaly_events():
     except Exception as e:
         print(f"  Anomaly seeding skipped: {e}")
 
-    conn.close()
+
+def setup_sqlite_schema():
+    setup_sqlite_schema_on_conn(get_sqlite_conn())
 
 
 def main():

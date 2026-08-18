@@ -78,7 +78,7 @@ def _startup_warm():
     except Exception as e:
         print(
             "\n⚠️  NOTICE: 'activity_logs' table not found in Supabase!\n"
-            "   Please run: backend/database/setup/04_activity_logs.sql in Supabase > SQL Editor\n"
+            "   Please run: backend/create_activity_logs_table.sql in Supabase > SQL Editor\n"
             f"   Error: {e}\n"
         )
 
@@ -104,6 +104,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS — allow React frontend (localhost:5173)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # ── Request Audit Logging Middleware ──────────────────────────────────────────
 # Logs every API call to the activity_logs table in Supabase.
 # Skips read-heavy GETs and noisy health/docs paths to keep logs meaningful.
@@ -127,13 +137,9 @@ async def request_audit_logger(request: Request, call_next):
         return await call_next(request)
 
     start_time = time.time()
-    try:
-        response = await call_next(request)
-    except Exception as exc:
-        # If an unhandled error happens, let it be handled by standard handlers
-        raise exc
-
+    response = await call_next(request)
     duration_ms = round((time.time() - start_time) * 1000)
+
     status_code = response.status_code
     log_status = "SUCCESS" if status_code < 400 else ("WARNING" if status_code < 500 else "ERROR")
 
@@ -151,6 +157,14 @@ async def request_audit_logger(request: Request, call_next):
         except Exception:
             pass
 
+    # Fallback to custom user headers if Authorization header was missing
+    if username == "anonymous":
+        user_hdr = request.headers.get("X-User-Name", "")
+        role_hdr = request.headers.get("X-User-Role", "")
+        if user_hdr:
+            username = user_hdr
+            user_role = role_hdr or "USER"
+
     try:
         from routers.activity_logs import _write_log
         _write_log(
@@ -165,16 +179,6 @@ async def request_audit_logger(request: Request, call_next):
         pass  # Never break the request flow
 
     return response
-
-# CORS — allow all origins including Vercel and local
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 # Register all routers
 app.include_router(auth.router)

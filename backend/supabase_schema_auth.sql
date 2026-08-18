@@ -24,5 +24,4 @@ VALUES
 ON CONFLICT (username) DO NOTHING;
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public read users" ON users;
-CREATE POLICY "Allow public read/write users" ON users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public read users" ON users FOR SELECT USING (true);

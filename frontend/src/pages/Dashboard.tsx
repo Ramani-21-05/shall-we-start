@@ -59,7 +59,6 @@ export function Dashboard() {
 
   if (isLoading) return <LoadingState />
   if (isError || !data) return <ErrorState onRetry={() => refetch()} />
-  if ((data as any)?.error) return <div className="p-8 text-center text-red-400 glass-card">Error loading dashboard data: {(data as any).error}</div>
 
   const { summary, combined_trend, seasonality, hourly_pattern, weekday_pattern, yoy_series, drug_shares } = data
 
@@ -89,9 +88,9 @@ export function Dashboard() {
               onChange={e => setSelectedDrug(e.target.value)}
               className="bg-transparent text-xs text-white font-semibold cursor-pointer focus:outline-none"
             >
-              <option value="ALL" className="bg-slate-900">All Drugs Combined</option>
+              <option value="ALL" >All Drugs Combined</option>
               {DRUGS.map(d => (
-                <option key={d} value={d} className="bg-slate-900">{d} - {DRUG_FULL_NAMES[d]}</option>
+                <option key={d} value={d} >{d} - {DRUG_FULL_NAMES[d]}</option>
               ))}
             </select>
           </div>
@@ -104,9 +103,9 @@ export function Dashboard() {
               onChange={e => setSelectedYear(e.target.value)}
               className="bg-transparent text-xs text-white font-semibold cursor-pointer focus:outline-none"
             >
-              <option value="ALL" className="bg-slate-900">All Years (2014–2019)</option>
+              <option value="ALL" >All Years (2014–2019)</option>
               {YEARS.filter(y => y !== 'ALL').map(y => (
-                <option key={y} value={y} className="bg-slate-900">{y}</option>
+                <option key={y} value={y} >{y}</option>
               ))}
             </select>
           </div>
@@ -126,9 +125,6 @@ export function Dashboard() {
           <p className="text-2xl font-bold text-indigo-300 font-mono mt-2">
             {summary.total_sales.toLocaleString()} <span className="text-xs font-normal text-slate-400">units</span>
           </p>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Avg: <span className="text-indigo-400 font-semibold">{summary.avg_daily_sales.toLocaleString()}</span> / day
-          </p>
         </div>
 
         {/* Peak Selling Month */}
@@ -141,9 +137,6 @@ export function Dashboard() {
           </div>
           <p className="text-2xl font-bold text-emerald-400 mt-2">
             {summary.peak_month.month_name}
-          </p>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Avg: <span className="text-emerald-400 font-semibold">{summary.peak_month.avg_sales}</span> units/hr
           </p>
         </div>
 
@@ -158,9 +151,6 @@ export function Dashboard() {
           <p className="text-2xl font-bold text-cyan-400 mt-2">
             {summary.peak_weekday.weekday}
           </p>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Avg: <span className="text-cyan-400 font-semibold">{summary.peak_weekday.avg_sales}</span> units/hr
-          </p>
         </div>
 
         {/* Peak Store Hour */}
@@ -173,9 +163,6 @@ export function Dashboard() {
           </div>
           <p className="text-2xl font-bold text-amber-400 mt-2 font-mono">
             {summary.peak_hour.label}
-          </p>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Avg: <span className="text-amber-400 font-semibold">{summary.peak_hour.avg_sales}</span> units/hr
           </p>
         </div>
 
@@ -200,29 +187,35 @@ export function Dashboard() {
       <div className="glass-card p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <TrendingUp className="text-indigo-400" size={18} />
+            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <TrendingUp className="text-indigo-600" size={18} />
               {selectedDrug === 'ALL' ? 'All Drugs Combined Sales Trend' : `${selectedDrug} Sales Trend`}
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 font-medium">
               {selectedYear === 'ALL' ? '72-Month Historical Trajectory (2014–2019)' : `Monthly Trend for ${selectedYear}`}
             </p>
           </div>
 
           {selectedDrug === 'ALL' && (
-            <div className="flex items-center gap-1 bg-slate-900/60 p-1 rounded-lg border border-white/5 self-start">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200 shadow-inner relative z-10 self-start">
               <button
+                type="button"
                 onClick={() => setTrendView('total')}
-                className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
-                  trendView === 'total' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                className={`px-4 py-1.5 text-xs rounded-full font-bold transition-all cursor-pointer ${
+                  trendView === 'total'
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md'
+                    : 'text-slate-600 hover:text-indigo-700 hover:bg-slate-200/80'
                 }`}
               >
                 Combined Total
               </button>
               <button
+                type="button"
                 onClick={() => setTrendView('stacked')}
-                className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
-                  trendView === 'stacked' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                className={`px-4 py-1.5 text-xs rounded-full font-bold transition-all cursor-pointer ${
+                  trendView === 'stacked'
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md'
+                    : 'text-slate-600 hover:text-indigo-700 hover:bg-slate-200/80'
                 }`}
               >
                 Category Stack
@@ -240,12 +233,12 @@ export function Dashboard() {
                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="label" tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} width={50} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(v: any) => [(v ?? 0).toLocaleString(), 'Sales Units']}
+                formatter={(v: any) => [Number(v).toLocaleString(), 'Sales Units']}
                 labelFormatter={l => `Period: ${l}`}
               />
               <Area
@@ -260,9 +253,9 @@ export function Dashboard() {
             </AreaChart>
           ) : (
             <AreaChart data={combined_trend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="label" tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} width={50} />
               <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
               {DRUGS.map(drug => (
@@ -301,12 +294,12 @@ export function Dashboard() {
 
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={hourly_pattern} margin={{ top: 10, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="hour" tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={h => `${h}h`} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis dataKey="hour" tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} tickFormatter={h => `${h}h`} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(val: any) => [`${(val ?? 0).toFixed(2)} units/hr`, 'Avg Sales']}
+                formatter={(val: any) => [`${Number(val).toFixed(2)} units/hr`, 'Avg Sales']}
                 labelFormatter={h => `Time Window: ${h}:00 - ${h}:59`}
               />
               <Bar dataKey="avg_sales" radius={[4, 4, 0, 0]}>
@@ -338,12 +331,12 @@ export function Dashboard() {
 
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={weekday_pattern} margin={{ top: 10, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="short_name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis dataKey="short_name" tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(val: any) => [`${(val ?? 0).toFixed(2)} units/hr`, 'Avg Sales']}
+                formatter={(val: any) => [`${Number(val).toFixed(2)} units/hr`, 'Avg Sales']}
               />
               <Bar dataKey="avg_sales" radius={[4, 4, 0, 0]}>
                 {weekday_pattern.map(entry => (
@@ -377,13 +370,13 @@ export function Dashboard() {
 
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={seasonality} margin={{ top: 10, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="month_name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis dataKey="month_name" tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(val: any, name: any) => [
-                  name === 'index' ? (val ?? 0).toFixed(2) : `${(val ?? 0).toFixed(2)} units`,
+                  name === 'index' ? Number(val).toFixed(2) : `${Number(val).toFixed(2)} units`,
                   name === 'index' ? 'Seasonal Index' : 'Avg Sales',
                 ]}
               />
@@ -411,12 +404,12 @@ export function Dashboard() {
 
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={yoy_series} margin={{ top: 10, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="year" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis dataKey="year" tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(val: any) => [(val ?? 0).toLocaleString(), 'Annual Sales']}
+                formatter={(val: any) => [Number(val).toLocaleString(), 'Annual Sales']}
               />
               <Bar dataKey="total_sales" fill="#6366f1" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -456,7 +449,7 @@ export function Dashboard() {
                 <Tooltip
                   contentStyle={TOOLTIP_STYLE}
                   formatter={(val: any, name: any) => [
-                    `${(val ?? 0).toLocaleString()} units`,
+                    `${Number(val).toLocaleString()} units`,
                     DRUG_FULL_NAMES[name] || name,
                   ]}
                 />

@@ -13,11 +13,9 @@ Implements live inventory decision logic:
 """
 
 import os
-import sqlite3
 import datetime
 from typing import Dict, List, Any, Optional
-
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "inventory_v2.db")
+from core.database import get_supabase
 
 DRUG_METADATA = {
     "M01AB": {"name": "Acemetacin / Anti-inflammatory", "category": "Anti-inflammatory", "lead_time_days": 2, "default_baseline": 500.0, "default_safety": 75.0, "default_stock": 400.0},
@@ -30,112 +28,87 @@ DRUG_METADATA = {
     "R06":   {"name": "Antihistamines", "category": "Antihistamine", "lead_time_days": 3, "default_baseline": 450.0, "default_safety": 65.0, "default_stock": 300.0},
 }
 
+# In-Memory Cache Store for high performance & fallback
+IN_MEMORY_INVENTORY: Dict[str, Dict[str, Any]] = {}
+IN_MEMORY_TRANSACTIONS: List[Dict[str, Any]] = []
+IN_MEMORY_BASELINE_HISTORY: List[Dict[str, Any]] = []
+IN_MEMORY_ORDERS: List[Dict[str, Any]] = []
 
-def get_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+
+def _init_in_memory_inventory():
+    """Initializes in-memory defaults."""
+    for code, meta in DRUG_METADATA.items():
+        if code not in IN_MEMORY_INVENTORY:
+            IN_MEMORY_INVENTORY[code] = {
+                "drug_code": code,
+                "drug_name": meta["name"],
+                "category": meta["category"],
+                "current_stock": meta["default_stock"],
+                "baseline_stock": meta["default_baseline"],
+                "safety_stock": meta["default_safety"],
+                "incoming_stock": 0.0,
+                "lead_time_days": meta["lead_time_days"],
+                "reorder_threshold": 70.0,
+            }
 
 
-def init_db():
-    conn = get_db()
-    cursor = conn.cursor()
+_init_in_memory_inventory()
 
-    # 1. Inventory table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS inventory (
-            drug_code TEXT PRIMARY KEY,
-            drug_name TEXT NOT NULL,
-            category TEXT NOT NULL,
-            current_stock REAL NOT NULL,
-            baseline_stock REAL NOT NULL,
-            safety_stock REAL NOT NULL,
-            incoming_stock REAL NOT NULL DEFAULT 0.0,
-            lead_time_days INTEGER NOT NULL DEFAULT 3,
-            reorder_threshold REAL NOT NULL DEFAULT 70.0,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
 
-    # 2. Inventory Transactions table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS inventory_transactions (
-            id TEXT PRIMARY KEY,
-            drug_code TEXT NOT NULL,
-            transaction_type TEXT NOT NULL, -- SALE, RESTOCK, RETURN, DAMAGE, EXPIRY, ADJUSTMENT
-            quantity REAL NOT NULL,
-            stock_before REAL NOT NULL,
-            stock_after REAL NOT NULL,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            user_id TEXT NOT NULL,
-            notes TEXT
-        )
-    """)
+def fetch_drug_from_supabase(drug_code: str) -> Dict[str, Any]:
+    """Fetches single drug inventory from Supabase or returns in-memory cache."""
+    try:
+        sb = get_supabase()
+        res = sb.table("inventory").select("*").eq("drug_code", drug_code).execute()
+        if res.data and len(res.data) > 0:
+            row = res.data[0]
+            item = {
+                "drug_code": row["drug_code"],
+                "drug_name": row.get("drug_name", DRUG_METADATA.get(drug_code, {}).get("name", drug_code)),
+                "category": row.get("category", DRUG_METADATA.get(drug_code, {}).get("category", "General")),
+                "current_stock": float(row.get("current_stock", 0.0)),
+                "baseline_stock": float(row.get("baseline_stock", 500.0)),
+                "safety_stock": float(row.get("safety_stock", 75.0)),
+                "incoming_stock": float(row.get("incoming_stock", 0.0)),
+                "lead_time_days": int(row.get("lead_time_days", 3)),
+                "reorder_threshold": float(row.get("reorder_threshold", 70.0)),
+            }
+            IN_MEMORY_INVENTORY[drug_code] = item
+            return item
+    except Exception as e:
+        print(f"Notice: Supabase inventory fetch fallback for {drug_code}: {e}")
 
-    # 3. Baseline History table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS baseline_history (
-            id TEXT PRIMARY KEY,
-            drug_code TEXT NOT NULL,
-            old_baseline REAL NOT NULL,
-            new_baseline REAL NOT NULL,
-            source TEXT NOT NULL, -- MANUAL, FORECAST_RECOMMENDATION
-            reason TEXT,
-            changed_by TEXT NOT NULL,
-            changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            status TEXT NOT NULL -- ACCEPTED, EDITED, REJECTED, MANUAL_UPDATE
-        )
-    """)
+    return IN_MEMORY_INVENTORY.get(
+        drug_code,
+        {
+            "drug_code": drug_code,
+            "drug_name": DRUG_METADATA.get(drug_code, {}).get("name", drug_code),
+            "category": DRUG_METADATA.get(drug_code, {}).get("category", "General"),
+            "current_stock": DRUG_METADATA.get(drug_code, {}).get("default_stock", 300.0),
+            "baseline_stock": DRUG_METADATA.get(drug_code, {}).get("default_baseline", 500.0),
+            "safety_stock": DRUG_METADATA.get(drug_code, {}).get("default_safety", 75.0),
+            "incoming_stock": 0.0,
+            "lead_time_days": DRUG_METADATA.get(drug_code, {}).get("lead_time_days", 3),
+            "reorder_threshold": 70.0,
+        },
+    )
 
-    # 4. Replenishment Orders table (Sent to Vendor Dashboard)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS replenishment_orders (
-            id TEXT PRIMARY KEY,
-            drug_code TEXT NOT NULL,
-            quantity REAL NOT NULL,
-            order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            expected_arrival DATE,
-            status TEXT NOT NULL DEFAULT 'PENDING_VENDOR', -- PENDING_VENDOR, SHIPPED, DELIVERED, CANCELLED
-            approved_by TEXT NOT NULL,
-            reason TEXT,
-            vendor_notes TEXT
-        )
-    """)
 
-    # Seed default inventory if empty
-    cursor.execute("SELECT COUNT(*) as cnt FROM inventory")
-    row = cursor.fetchone()
-    if row["cnt"] == 0:
-        for code, meta in DRUG_METADATA.items():
-            cursor.execute("""
-                INSERT INTO inventory (drug_code, drug_name, category, current_stock, baseline_stock, safety_stock, incoming_stock, lead_time_days)
-                VALUES (?, ?, ?, ?, ?, ?, 0.0, ?)
-            """, (code, meta["name"], meta["category"], meta["default_stock"], meta["default_baseline"], meta["default_safety"], meta["lead_time_days"]))
-            
-            # Initial seed transaction
-            tx_id = f"tx_init_{code}_{int(datetime.datetime.now().timestamp())}"
-            cursor.execute("""
-                INSERT INTO inventory_transactions (id, drug_code, transaction_type, quantity, stock_before, stock_after, user_id, notes)
-                VALUES (?, ?, 'RESTOCK', ?, 0, ?, 'system', 'Initial Stock Setup')
-            """, (tx_id, code, meta["default_stock"], meta["default_stock"]))
-            
-    conn.commit()
-    conn.close()
+def save_drug_to_supabase(item: Dict[str, Any]):
+    """Saves/upserts drug inventory record to Supabase."""
+    IN_MEMORY_INVENTORY[item["drug_code"]] = item
+    try:
+        sb = get_supabase()
+        sb.table("inventory").upsert(item, on_conflict="drug_code").execute()
+    except Exception as e:
+        print(f"Notice: Supabase inventory save notice: {e}")
 
-# Initialize DB on module import
+
 def reset_db():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DROP TABLE IF EXISTS inventory")
-    cursor.execute("DROP TABLE IF EXISTS inventory_transactions")
-    cursor.execute("DROP TABLE IF EXISTS baseline_history")
-    cursor.execute("DROP TABLE IF EXISTS replenishment_orders")
-    conn.commit()
-    conn.close()
-    init_db()
-
-init_db()
+    _init_in_memory_inventory()
+    IN_MEMORY_TRANSACTIONS.clear()
+    IN_MEMORY_BASELINE_HISTORY.clear()
+    IN_MEMORY_ORDERS.clear()
 
 
 def _get_forecast_demand(drug_code: str) -> Dict[str, float]:
@@ -177,28 +150,15 @@ def _get_forecast_demand(drug_code: str) -> Dict[str, float]:
 
 def evaluate_drug_inventory(drug_code: str) -> Dict[str, Any]:
     """
-    Core Decision-Making Engine for a single drug.
+    Core Decision-Making Engine for a single drug using Supabase storage.
     Computes inventory position, target stock, consumption %, risk level, and recommended order quantity.
     """
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM inventory WHERE drug_code = ?", (drug_code,))
-    row = cursor.fetchone()
-    conn.close()
-
-    if not row:
-        meta = DRUG_METADATA.get(drug_code, {"name": drug_code, "category": "General", "lead_time_days": 3, "default_baseline": 500, "default_safety": 75, "default_stock": 300})
-        curr_stock = meta["default_stock"]
-        base_stock = meta["default_baseline"]
-        safety_stock = meta["default_safety"]
-        incoming_stock = 0.0
-        lead_time = meta["lead_time_days"]
-    else:
-        curr_stock = float(row["current_stock"])
-        base_stock = float(row["baseline_stock"])
-        safety_stock = float(row["safety_stock"])
-        incoming_stock = float(row["incoming_stock"])
-        lead_time = int(row["lead_time_days"])
+    row = fetch_drug_from_supabase(drug_code)
+    curr_stock = float(row["current_stock"])
+    base_stock = float(row["baseline_stock"])
+    safety_stock = float(row["safety_stock"])
+    incoming_stock = float(row["incoming_stock"])
+    lead_time = int(row["lead_time_days"])
 
     # 1. Consumption %
     consumed_qty = max(0.0, base_stock - curr_stock)
@@ -288,87 +248,56 @@ def get_all_inventory_overview() -> List[Dict[str, Any]]:
 
 def record_sale(drug_code: str, quantity: float, user_id: str = "pharmacist", notes: str = "") -> Dict[str, Any]:
     """Records a sale transaction, decreases current stock, and returns updated evaluation."""
-    if quantity <= 0:
-        raise ValueError("Sale quantity must be greater than 0")
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT current_stock FROM inventory WHERE drug_code = ?", (drug_code,))
-    row = cursor.fetchone()
-    if not row:
-        conn.close()
-        raise ValueError(f"Drug {drug_code} not found in inventory")
-
-    stock_before = float(row["current_stock"])
-    stock_after = max(0.0, stock_before - quantity)
-
-    tx_id = f"tx_sale_{drug_code}_{int(datetime.datetime.now().timestamp())}"
-    cursor.execute("""
-        INSERT INTO inventory_transactions (id, drug_code, transaction_type, quantity, stock_before, stock_after, user_id, notes)
-        VALUES (?, ?, 'SALE', ?, ?, ?, ?, ?)
-    """, (tx_id, drug_code, quantity, stock_before, stock_after, user_id, notes or "Direct POS Sale"))
-
-    cursor.execute("""
-        UPDATE inventory SET current_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE drug_code = ?
-    """, (stock_after, drug_code))
-
-    conn.commit()
-    conn.close()
-
-    return evaluate_drug_inventory(drug_code)
+    return record_inventory_transaction(drug_code, "SALE", quantity, user_id, notes)
 
 
 def record_inventory_transaction(
     drug_code: str,
-    transaction_type: str, # SALE, RESTOCK, RETURN, DAMAGE, EXPIRY, ADJUSTMENT
+    transaction_type: str,
     quantity: float,
     user_id: str = "pharmacist",
     notes: str = ""
 ) -> Dict[str, Any]:
-    """
-    Executes a formal inventory transaction:
-    Current Stock = Opening Stock - Sales + Restocking + Returns - Damage - Expiry +- Adjustments
-    """
+    """Executes an inventory transaction using Supabase storage."""
     tx_type = transaction_type.upper()
-    valid_types = ["SALE", "RESTOCK", "RETURN", "DAMAGE", "EXPIRY", "ADJUSTMENT"]
-    if tx_type not in valid_types:
-        raise ValueError(f"Invalid transaction type. Must be one of {valid_types}")
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT current_stock, incoming_stock FROM inventory WHERE drug_code = ?", (drug_code,))
-    row = cursor.fetchone()
-    if not row:
-        conn.close()
-        raise ValueError(f"Drug {drug_code} not found in inventory")
-
-    stock_before = float(row["current_stock"])
-    incoming = float(row["incoming_stock"])
+    inv = fetch_drug_from_supabase(drug_code)
+    stock_before = float(inv["current_stock"])
+    incoming = float(inv["incoming_stock"])
 
     if tx_type in ["SALE", "DAMAGE", "EXPIRY"]:
         stock_after = max(0.0, stock_before - quantity)
     elif tx_type in ["RESTOCK", "RETURN"]:
         stock_after = stock_before + quantity
-        # If restocking from incoming order, clear incoming stock
         if incoming > 0:
             incoming = max(0.0, incoming - quantity)
     elif tx_type == "ADJUSTMENT":
-        stock_after = max(0.0, quantity) # Set absolute stock level
+        stock_after = max(0.0, quantity)
     else:
         stock_after = stock_before
 
     tx_id = f"tx_{tx_type.lower()}_{drug_code}_{int(datetime.datetime.now().timestamp())}"
-    cursor.execute("""
-        INSERT INTO inventory_transactions (id, drug_code, transaction_type, quantity, stock_before, stock_after, user_id, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (tx_id, drug_code, tx_type, quantity, stock_before, stock_after, user_id, notes))
+    tx_record = {
+        "id": tx_id,
+        "drug_code": drug_code,
+        "transaction_type": tx_type,
+        "quantity": quantity,
+        "stock_before": stock_before,
+        "stock_after": stock_after,
+        "timestamp": datetime.datetime.now().isoformat(),
+        "user_id": user_id,
+        "notes": notes,
+    }
 
-    cursor.execute("""
-        UPDATE inventory SET current_stock = ?, incoming_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE drug_code = ?
-    """, (stock_after, incoming, drug_code))
+    IN_MEMORY_TRANSACTIONS.insert(0, tx_record)
+    inv["current_stock"] = stock_after
+    inv["incoming_stock"] = incoming
+    save_drug_to_supabase(inv)
 
-    conn.commit()
-    conn.close()
+    try:
+        sb = get_supabase()
+        sb.table("inventory_transactions").upsert(tx_record, on_conflict="id").execute()
+    except Exception as e:
+        print(f"Notice: Supabase transaction log notice: {e}")
 
     return evaluate_drug_inventory(drug_code)
 
@@ -381,32 +310,31 @@ def update_baseline_stock(
     changed_by: str = "pharmacist",
     status: str = "MANUAL_UPDATE"
 ) -> Dict[str, Any]:
-    """Updates drug baseline stock and logs history."""
-    if new_baseline <= 0:
-        raise ValueError("Baseline stock must be greater than 0")
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT baseline_stock FROM inventory WHERE drug_code = ?", (drug_code,))
-    row = cursor.fetchone()
-    if not row:
-        conn.close()
-        raise ValueError(f"Drug {drug_code} not found")
-
-    old_baseline = float(row["baseline_stock"])
+    """Updates drug baseline stock in Supabase."""
+    inv = fetch_drug_from_supabase(drug_code)
+    old_baseline = float(inv["baseline_stock"])
     hist_id = f"hist_{drug_code}_{int(datetime.datetime.now().timestamp())}"
+    hist_record = {
+        "id": hist_id,
+        "drug_code": drug_code,
+        "old_baseline": old_baseline,
+        "new_baseline": new_baseline,
+        "source": source,
+        "reason": reason,
+        "changed_by": changed_by,
+        "status": status,
+        "changed_at": datetime.datetime.now().isoformat(),
+    }
 
-    cursor.execute("""
-        INSERT INTO baseline_history (id, drug_code, old_baseline, new_baseline, source, reason, changed_by, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (hist_id, drug_code, old_baseline, new_baseline, source, reason, changed_by, status))
+    IN_MEMORY_BASELINE_HISTORY.insert(0, hist_record)
+    inv["baseline_stock"] = new_baseline
+    save_drug_to_supabase(inv)
 
-    cursor.execute("""
-        UPDATE inventory SET baseline_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE drug_code = ?
-    """, (new_baseline, drug_code))
-
-    conn.commit()
-    conn.close()
+    try:
+        sb = get_supabase()
+        sb.table("baseline_history").upsert(hist_record, on_conflict="id").execute()
+    except Exception as e:
+        print(f"Notice: Supabase baseline history notice: {e}")
 
     return evaluate_drug_inventory(drug_code)
 
@@ -417,32 +345,33 @@ def create_replenishment_order(
     approved_by: str = "pharmacist",
     reason: str = "Replenishment Recommendation Approved"
 ) -> Dict[str, Any]:
-    """
-    Pharmacy member approves/edits replenishment recommendation.
-    Generates a Replenishment Order sent to the Vendor Dashboard and increases incoming_stock.
-    """
-    if quantity <= 0:
-        raise ValueError("Replenishment quantity must be > 0")
-
-    conn = get_db()
-    cursor = conn.cursor()
-    
+    """Generates a Replenishment Order stored in Supabase."""
     order_id = f"ORD-{drug_code}-{int(datetime.datetime.now().timestamp())}"
     lead_time = DRUG_METADATA.get(drug_code, {}).get("lead_time_days", 3)
     expected_arrival = (datetime.date.today() + datetime.timedelta(days=lead_time)).isoformat()
 
-    cursor.execute("""
-        INSERT INTO replenishment_orders (id, drug_code, quantity, expected_arrival, status, approved_by, reason)
-        VALUES (?, ?, ?, ?, 'PENDING_VENDOR', ?, ?)
-    """, (order_id, drug_code, quantity, expected_arrival, approved_by, reason))
+    order_record = {
+        "id": order_id,
+        "drug_code": drug_code,
+        "quantity": quantity,
+        "order_date": datetime.datetime.now().isoformat(),
+        "expected_arrival": expected_arrival,
+        "status": "PENDING_VENDOR",
+        "approved_by": approved_by,
+        "reason": reason,
+        "vendor_notes": "",
+    }
 
-    # Increase incoming stock on order approval
-    cursor.execute("""
-        UPDATE inventory SET incoming_stock = incoming_stock + ?, updated_at = CURRENT_TIMESTAMP WHERE drug_code = ?
-    """, (quantity, drug_code))
+    IN_MEMORY_ORDERS.insert(0, order_record)
+    inv = fetch_drug_from_supabase(drug_code)
+    inv["incoming_stock"] = float(inv["incoming_stock"]) + quantity
+    save_drug_to_supabase(inv)
 
-    conn.commit()
-    conn.close()
+    try:
+        sb = get_supabase()
+        sb.table("replenishment_orders").upsert(order_record, on_conflict="id").execute()
+    except Exception as e:
+        print(f"Notice: Supabase replenishment order notice: {e}")
 
     return {
         "order_id": order_id,
@@ -451,146 +380,118 @@ def create_replenishment_order(
         "status": "PENDING_VENDOR",
         "expected_arrival": expected_arrival,
         "approved_by": approved_by,
-        "message": f"Replenishment order for {quantity} units of {drug_code} dispatched to Vendor Dashboard."
+        "message": f"Replenishment order for {quantity} units of {drug_code} dispatched."
     }
 
 
 def get_vendor_orders(status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Vendor Dashboard query: Returns all incoming replenishment orders placed by the pharmacy."""
-    conn = get_db()
-    cursor = conn.cursor()
-    query = "SELECT * FROM replenishment_orders"
-    params = []
+    """Returns replenishment orders from Supabase or memory."""
+    try:
+        sb = get_supabase()
+        q = sb.table("replenishment_orders").select("*")
+        if status_filter:
+            q = q.eq("status", status_filter.upper())
+        res = q.execute()
+        if res.data:
+            orders = []
+            for r in res.data:
+                meta = DRUG_METADATA.get(r["drug_code"], {})
+                orders.append({
+                    "order_id": r["id"],
+                    "drug_code": r["drug_code"],
+                    "drug_name": meta.get("name", r["drug_code"]),
+                    "category": meta.get("category", "General"),
+                    "quantity": float(r["quantity"]),
+                    "order_date": r.get("order_date", ""),
+                    "expected_arrival": r.get("expected_arrival", ""),
+                    "status": r["status"],
+                    "approved_by": r.get("approved_by", "pharmacist"),
+                    "reason": r.get("reason", ""),
+                    "vendor_notes": r.get("vendor_notes", "")
+                })
+            return orders
+    except Exception as e:
+        print(f"Notice: Supabase vendor orders fetch notice: {e}")
+
+    filtered = IN_MEMORY_ORDERS
     if status_filter:
-        query += " WHERE status = ?"
-        params.append(status_filter.upper())
-    query += " ORDER BY order_date DESC"
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    conn.close()
-
-    orders = []
-    for r in rows:
-        d_code = r["drug_code"]
-        meta = DRUG_METADATA.get(d_code, {})
-        orders.append({
-            "order_id": r["id"],
-            "drug_code": d_code,
-            "drug_name": meta.get("name", d_code),
-            "category": meta.get("category", "General"),
-            "quantity": float(r["quantity"]),
-            "order_date": r["order_date"],
-            "expected_arrival": r["expected_arrival"],
-            "status": r["status"],
-            "approved_by": r["approved_by"],
-            "reason": r["reason"],
-            "vendor_notes": r["vendor_notes"] or ""
-        })
-    return orders
+        filtered = [o for o in IN_MEMORY_ORDERS if o["status"] == status_filter.upper()]
+    return filtered
 
 
-def update_vendor_order_status(
-    order_id: str,
-    new_status: str, # SHIPPED, DELIVERED, CANCELLED
-    vendor_notes: str = ""
-) -> Dict[str, Any]:
-    """
-    Vendor updates order status.
-    If DELIVERED: Triggers automatic restocking of current inventory and clears incoming stock.
-    """
+def update_vendor_order_status(order_id: str, new_status: str, vendor_notes: str = "") -> Dict[str, Any]:
+    """Vendor updates order status in Supabase."""
     status_upper = new_status.upper()
-    valid_statuses = ["SHIPPED", "DELIVERED", "CANCELLED"]
-    if status_upper not in valid_statuses:
-        raise ValueError(f"Invalid vendor status. Must be one of {valid_statuses}")
+    try:
+        sb = get_supabase()
+        sb.table("replenishment_orders").update({"status": status_upper, "vendor_notes": vendor_notes}).eq("id", order_id).execute()
+    except Exception as e:
+        print(f"Notice: Supabase order status update notice: {e}")
 
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM replenishment_orders WHERE id = ?", (order_id,))
-    row = cursor.fetchone()
-    if not row:
-        conn.close()
-        raise ValueError(f"Order {order_id} not found")
+    for o in IN_MEMORY_ORDERS:
+        if o["id"] == order_id:
+            old_status = o["status"]
+            o["status"] = status_upper
+            o["vendor_notes"] = vendor_notes
+            drug_code = o["drug_code"]
+            qty = float(o["quantity"])
 
-    old_status = row["status"]
-    drug_code = row["drug_code"]
-    qty = float(row["quantity"])
+            if status_upper == "DELIVERED" and old_status != "DELIVERED":
+                inv = fetch_drug_from_supabase(drug_code)
+                inv["current_stock"] = float(inv["current_stock"]) + qty
+                inv["incoming_stock"] = max(0.0, float(inv["incoming_stock"]) - qty)
+                save_drug_to_supabase(inv)
 
-    cursor.execute("""
-        UPDATE replenishment_orders SET status = ?, vendor_notes = ? WHERE id = ?
-    """, (status_upper, vendor_notes, order_id))
+            return {
+                "order_id": order_id,
+                "drug_code": drug_code,
+                "quantity": qty,
+                "old_status": old_status,
+                "new_status": status_upper,
+                "vendor_notes": vendor_notes,
+            }
 
-    # If order is now DELIVERED and wasn't already delivered
-    if status_upper == "DELIVERED" and old_status != "DELIVERED":
-        # Get current stock & incoming stock
-        cursor.execute("SELECT current_stock, incoming_stock FROM inventory WHERE drug_code = ?", (drug_code,))
-        inv_row = cursor.fetchone()
-        if inv_row:
-            curr_stock = float(inv_row["current_stock"])
-            inc_stock = float(inv_row["incoming_stock"])
-            new_curr = curr_stock + qty
-            new_inc = max(0.0, inc_stock - qty)
-
-            tx_id = f"tx_restock_{drug_code}_{int(datetime.datetime.now().timestamp())}"
-            cursor.execute("""
-                INSERT INTO inventory_transactions (id, drug_code, transaction_type, quantity, stock_before, stock_after, user_id, notes)
-                VALUES (?, ?, 'RESTOCK', ?, ?, ?, 'vendor', ?)
-            """, (tx_id, drug_code, qty, curr_stock, new_curr, f"Shipment Delivered for Order {order_id}"))
-
-            cursor.execute("""
-                UPDATE inventory SET current_stock = ?, incoming_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE drug_code = ?
-            """, (new_curr, new_inc, drug_code))
-
-    conn.commit()
-    conn.close()
-
-    return {
-        "order_id": order_id,
-        "drug_code": drug_code,
-        "quantity": qty,
-        "old_status": old_status,
-        "new_status": status_upper,
-        "vendor_notes": vendor_notes
-    }
+    return {"order_id": order_id, "new_status": status_upper}
 
 
 def get_transaction_history(drug_code: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
-    """Fetches inventory audit transaction logs."""
-    conn = get_db()
-    cursor = conn.cursor()
-    query = "SELECT * FROM inventory_transactions"
-    params = []
+    """Fetches transaction logs from Supabase."""
+    try:
+        sb = get_supabase()
+        q = sb.table("inventory_transactions").select("*")
+        if drug_code:
+            q = q.eq("drug_code", drug_code.upper())
+        res = q.order("timestamp", desc=True).limit(limit).execute()
+        if res.data:
+            return res.data
+    except Exception as e:
+        print(f"Notice: Supabase transaction log fetch notice: {e}")
+
     if drug_code:
-        query += " WHERE drug_code = ?"
-        params.append(drug_code.upper())
-    query += " ORDER BY timestamp DESC LIMIT ?"
-    params.append(limit)
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+        return [t for t in IN_MEMORY_TRANSACTIONS if t["drug_code"].upper() == drug_code.upper()][:limit]
+    return IN_MEMORY_TRANSACTIONS[:limit]
 
 
 def get_baseline_history(drug_code: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Fetches baseline change audit history."""
-    conn = get_db()
-    cursor = conn.cursor()
-    query = "SELECT * FROM baseline_history"
-    params = []
+    """Fetches baseline history from Supabase."""
+    try:
+        sb = get_supabase()
+        q = sb.table("baseline_history").select("*")
+        if drug_code:
+            q = q.eq("drug_code", drug_code.upper())
+        res = q.order("changed_at", desc=True).execute()
+        if res.data:
+            return res.data
+    except Exception as e:
+        print(f"Notice: Supabase baseline history fetch notice: {e}")
+
     if drug_code:
-        query += " WHERE drug_code = ?"
-        params.append(drug_code.upper())
-    query += " ORDER BY changed_at DESC"
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+        return [b for b in IN_MEMORY_BASELINE_HISTORY if b["drug_code"].upper() == drug_code.upper()]
+    return IN_MEMORY_BASELINE_HISTORY
 
 
 def get_sunday_replenishment_review() -> List[Dict[str, Any]]:
-    """
-    Sunday Replenishment Cycle:
-    Scans ALL 8 drugs regardless of stock levels and generates a full replenishment review matrix.
-    """
+    """Sunday Replenishment Review matrix."""
     overview = get_all_inventory_overview()
     review_list = []
     for item in overview:

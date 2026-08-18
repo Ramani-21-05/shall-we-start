@@ -258,7 +258,7 @@ export function InventoryPage() {
           </button>
 
           {/* Quick Tabs */}
-          <div className="flex items-center gap-2 bg-slate-900/60 p-1.5 rounded-xl border border-white/5">
+          <div className="flex items-center gap-2 bg-white/60 p-1.5 rounded-xl border border-white/5">
           <button
             onClick={() => setActiveTab('overview')}
             className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
@@ -365,30 +365,30 @@ export function InventoryPage() {
                           </div>
                         </div>
 
-                        <p className="text-xs text-slate-300 bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
+                        <p className="text-xs text-slate-300 bg-white/40 p-2.5 rounded-lg border border-white/5">
                           {alert.reason}
                         </p>
 
                         {/* Detailed Metrics Table inside Alert */}
                         <div className="grid grid-cols-4 gap-2 text-center mt-3 pt-3 border-t border-white/5">
-                          <div className="bg-slate-900/60 p-2 rounded-lg">
+                          <div className="bg-white/60 p-2 rounded-lg">
                             <p className="text-[10px] text-slate-400 uppercase font-semibold">Current</p>
                             <p className="text-sm font-bold text-white">{alert.current_stock}</p>
                           </div>
 
-                          <div className="bg-slate-900/60 p-2 rounded-lg">
+                          <div className="bg-white/60 p-2 rounded-lg">
                             <p className="text-[10px] text-slate-400 uppercase font-semibold">Baseline</p>
                             <p className="text-sm font-bold text-slate-300">{alert.baseline_stock}</p>
                           </div>
 
-                          <div className="bg-slate-900/60 p-2 rounded-lg">
+                          <div className="bg-white/60 p-2 rounded-lg">
                             <p className="text-[10px] text-slate-400 uppercase font-semibold">Consumed %</p>
                             <p className={`text-sm font-bold ${alert.consumed_pct >= 70 ? 'text-amber-400' : 'text-amber-300'}`}>
                               {alert.consumed_pct}%
                             </p>
                           </div>
 
-                          <div className="bg-slate-900/60 p-2 rounded-lg">
+                          <div className="bg-white/60 p-2 rounded-lg">
                             <p className="text-[10px] text-slate-400 uppercase font-semibold">Incoming</p>
                             <p className="text-sm font-bold text-indigo-400">{alert.incoming_stock}</p>
                           </div>
@@ -466,7 +466,7 @@ export function InventoryPage() {
                   <select
                     value={saleDrug}
                     onChange={(e) => setSaleDrug(e.target.value)}
-                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                   >
                     {DRUGS.map((d) => (
                       <option key={d} value={d}>
@@ -483,7 +483,7 @@ export function InventoryPage() {
                     value={saleQty}
                     onChange={(e) => setSaleQty(e.target.value)}
                     placeholder="e.g. 25"
-                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
@@ -495,7 +495,7 @@ export function InventoryPage() {
                   value={saleNotes}
                   onChange={(e) => setSaleNotes(e.target.value)}
                   placeholder="Optional notes..."
-                  className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
@@ -525,7 +525,7 @@ export function InventoryPage() {
                   <select
                     value={txDrug}
                     onChange={(e) => setTxDrug(e.target.value)}
-                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                   >
                     {DRUGS.map((d) => (
                       <option key={d} value={d}>
@@ -540,7 +540,7 @@ export function InventoryPage() {
                   <select
                     value={txType}
                     onChange={(e) => setTxType(e.target.value)}
-                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                   >
                     <option value="RESTOCK">RESTOCK (+)</option>
                     <option value="RETURN">RETURN (+)</option>
@@ -557,7 +557,7 @@ export function InventoryPage() {
                     value={txQty}
                     onChange={(e) => setTxQty(e.target.value)}
                     placeholder="Qty"
-                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
@@ -569,7 +569,7 @@ export function InventoryPage() {
                   value={txNotes}
                   onChange={(e) => setTxNotes(e.target.value)}
                   placeholder="e.g. Expired batch discarded..."
-                  className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
@@ -689,7 +689,7 @@ export function InventoryPage() {
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       selectedDrug === d
                         ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                        : 'bg-slate-900/60 text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                        : 'bg-white/60 text-slate-400 hover:bg-white/5 hover:text-slate-200'
                     }`}
                   >
                     {d}
@@ -804,12 +804,12 @@ export function InventoryPage() {
                   </h3>
 
                   <div className="space-y-3 text-xs">
-                    <div className="bg-slate-900/60 p-3 rounded-lg flex items-center justify-between">
+                    <div className="bg-white/60 p-3 rounded-lg flex items-center justify-between">
                       <span className="text-slate-400">Tomorrow Demand:</span>
                       <span className="font-bold text-white text-sm">{drugDetail.forecast_details?.tomorrow} units</span>
                     </div>
 
-                    <div className="bg-slate-900/60 p-3 rounded-lg space-y-1">
+                    <div className="bg-white/60 p-3 rounded-lg space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Next 7 Days Demand (P50):</span>
                         <span className="font-bold text-indigo-400 text-sm">{drugDetail.forecast_details?.next_7_days} units</span>
@@ -820,7 +820,7 @@ export function InventoryPage() {
                       </div>
                     </div>
 
-                    <div className="bg-slate-900/60 p-3 rounded-lg flex items-center justify-between">
+                    <div className="bg-white/60 p-3 rounded-lg flex items-center justify-between">
                       <span className="text-slate-400">Next 14 Days Demand:</span>
                       <span className="font-bold text-slate-200 text-sm">{drugDetail.forecast_details?.next_14_days} units</span>
                     </div>
@@ -840,7 +840,7 @@ export function InventoryPage() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="bg-slate-900/60 p-3 rounded-xl">
+                    <div className="bg-white/60 p-3 rounded-xl">
                       <p className="text-[10px] text-slate-400 uppercase font-semibold">Inventory Position</p>
                       <p className="text-base font-bold text-white mt-1">
                         {drugDetail.current_stock} + {drugDetail.incoming_stock} = {drugDetail.inventory_position}
@@ -848,7 +848,7 @@ export function InventoryPage() {
                       <p className="text-[10px] text-slate-500">Current + Incoming</p>
                     </div>
 
-                    <div className="bg-slate-900/60 p-3 rounded-xl">
+                    <div className="bg-white/60 p-3 rounded-xl">
                       <p className="text-[10px] text-slate-400 uppercase font-semibold">Target Stock</p>
                       <p className="text-base font-bold text-cyan-300 mt-1">{drugDetail.target_stock}</p>
                       <p className="text-[10px] text-slate-500">Baseline + Forecast + Safety</p>
@@ -861,7 +861,7 @@ export function InventoryPage() {
                     </div>
                   </div>
 
-                  <div className="bg-slate-900/60 p-3 rounded-xl border border-white/5 text-xs text-slate-300 space-y-1">
+                  <div className="bg-white/60 p-3 rounded-xl border border-white/5 text-xs text-slate-300 space-y-1">
                     <p className="font-semibold text-white">Decision Analysis:</p>
                     <p>{drugDetail.reason}</p>
                   </div>
@@ -1073,7 +1073,7 @@ export function InventoryPage() {
           <div className="glass-card max-w-md w-full p-6 space-y-4 border border-indigo-500/30">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white">Edit Replenishment Quantity</h3>
-              <button onClick={() => setEditOrderModal(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setEditOrderModal(null)} className="text-slate-600 hover:text-indigo-700">
                 <X size={18} />
               </button>
             </div>
@@ -1088,7 +1088,7 @@ export function InventoryPage() {
                 type="number"
                 value={editOrderQtyInput}
                 onChange={(e) => setEditOrderQtyInput(e.target.value)}
-                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-indigo-500"
+                className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
 
@@ -1119,7 +1119,7 @@ export function InventoryPage() {
           <div className="glass-card max-w-md w-full p-6 space-y-4 border border-white/10">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white">Edit Baseline Stock ({editBaselineModal.drug_code})</h3>
-              <button onClick={() => setEditBaselineModal(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setEditBaselineModal(null)} className="text-slate-600 hover:text-indigo-700">
                 <X size={18} />
               </button>
             </div>
@@ -1134,7 +1134,7 @@ export function InventoryPage() {
                 type="number"
                 value={editBaselineInput}
                 onChange={(e) => setEditBaselineInput(e.target.value)}
-                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-indigo-500"
+                className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
 
@@ -1145,7 +1145,7 @@ export function InventoryPage() {
                 value={editBaselineReason}
                 onChange={(e) => setEditBaselineReason(e.target.value)}
                 placeholder="e.g. Seasonal demand increase..."
-                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full mt-1 bg-white border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
 

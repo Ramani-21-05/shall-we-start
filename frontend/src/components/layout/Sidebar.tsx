@@ -40,7 +40,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Dashboard & Analytics',
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Sales Dashboard', roles: ['ADMIN', 'MARKETING'] },
-      { to: '/strategy', icon: Target, label: 'Strategy Intelligence', roles: ['MARKETING'] },
+      { to: '/strategy', icon: Target, label: 'Strategy Intelligence', roles: ['ADMIN', 'MARKETING'] },
     ],
   },
   {
@@ -194,19 +194,6 @@ export function Sidebar() {
           </nav>
         </div>
 
-        {/* Footer Data Integrity */}
-        <div className="px-4 py-4 border-t border-white/5 space-y-3">
-          <div className="glass-card-sm px-3 py-2 space-y-1">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
-              <p className="text-[11px] text-emerald-400">Train: 2014–2018</p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <p className="text-[11px] text-amber-400">Anomaly: 2019 only</p>
-            </div>
-          </div>
-        </div>
       </aside>
 
       {/* Change Password Modal */}

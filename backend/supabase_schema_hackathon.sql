@@ -141,8 +141,7 @@ ALTER TABLE simulation_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE anomaly_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE monthly_simulation_records ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Public read drugs" ON drugs;
-CREATE POLICY "Public read/write drugs" ON drugs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public read drugs" ON drugs FOR SELECT USING (true);
 CREATE POLICY "Public read/write inventory" ON inventory FOR ALL USING (true);
 CREATE POLICY "Public read/write inventory_transactions" ON inventory_transactions FOR ALL USING (true);
 CREATE POLICY "Public read/write forecasts" ON forecasts FOR ALL USING (true);
