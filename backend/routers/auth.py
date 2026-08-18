@@ -31,7 +31,7 @@ class AuthResponse(BaseModel):
 
 
 class AdminCreateUserRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(..., min_length=5)
     username: str = Field(..., min_length=3, max_length=30)
     full_name: str = Field(..., min_length=2)
     role: str = Field(..., description="Role must be ADMIN, STAFF, or MARKETING")
