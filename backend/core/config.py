@@ -16,9 +16,9 @@ if os.path.exists(backend_env):
 
 
 class Settings(BaseSettings):
-    # Supabase (Loaded directly from environment / .env file)
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://lsqpkqflqhwlcvtkoowr.supabase.co")
-    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "sb_publishable_FTmqAvJnNEx36CvCii16zQ_gK1s_P7i")
+    # Supabase (Loaded from environment / .env, defaulting to cjzsyyzjcendnldhxfdn)
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://cjzsyyzjcendnldhxfdn.supabase.co")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqenN5eXpqY2VuZG5sZGh4ZmRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMjkxNDgsImV4cCI6MjEwMjYwNTE0OH0.BFZ8moRHnu6-JfzDdW3ildICkv2oDYy4CCbvfupHcAM")
 
     # Groq LLM
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
