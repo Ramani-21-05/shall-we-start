@@ -55,11 +55,32 @@ def generate_initial_password() -> str:
 @router.post("/login", response_model=AuthResponse)
 def login(req: LoginRequest):
     identifier = req.username_or_email.strip().lower()
+    user = None
 
-    sb = get_supabase()
-    res = sb.table("users").select("id, email, username, hashed_password, full_name, role, is_active").or_(f"username.eq.{identifier},email.eq.{identifier}").limit(1).execute()
+    # 1. Try Supabase first
+    try:
+        sb = get_supabase()
+        res = sb.table("users").select("id, email, username, hashed_password, full_name, role, is_active").or_(f"username.eq.{identifier},email.eq.{identifier}").limit(1).execute()
+        if res.data and len(res.data) > 0:
+            user = res.data[0]
+    except Exception as e:
+        print(f"Notice: Supabase user lookup: {e}")
 
-    if not res.data or len(res.data) == 0:
+    # 2. Fallback to SQLite if Supabase unavailable
+    if not user:
+        try:
+            from init_hackathon_db import get_sqlite_conn
+            conn = get_sqlite_conn()
+            cur = conn.cursor()
+            cur.execute("SELECT id, email, username, hashed_password, full_name, role, is_active FROM users WHERE lower(username) = ? OR lower(email) = ? LIMIT 1", (identifier, identifier))
+            r = cur.fetchone()
+            if r:
+                user = dict(r)
+            conn.close()
+        except Exception as e:
+            print(f"Notice: SQLite fallback user lookup: {e}")
+
+    if not user:
         _write_log(
             event_type="LOGIN",
             message=f"Failed login attempt for identifier '{identifier}'.",
@@ -67,8 +88,6 @@ def login(req: LoginRequest):
             status="ERROR",
         )
         raise HTTPException(status_code=401, detail="Invalid username/email or password.")
-
-    user = res.data[0]
 
     if not user.get("is_active"):
         _write_log(
@@ -100,7 +119,7 @@ def login(req: LoginRequest):
     )
 
     user_dict = {
-        "id": user["id"],
+        "id": str(user["id"]),
         "email": user["email"],
         "username": user["username"],
         "full_name": user["full_name"],
