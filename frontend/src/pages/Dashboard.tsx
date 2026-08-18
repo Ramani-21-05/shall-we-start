@@ -59,7 +59,7 @@ export function Dashboard() {
 
   if (isLoading) return <LoadingState />
   if (isError || !data) return <ErrorState onRetry={() => refetch()} />
-  if (data.error) return <div className="p-8 text-center text-red-400 glass-card">Error loading dashboard data: {data.error}</div>
+  if ((data as any)?.error) return <div className="p-8 text-center text-red-400 glass-card">Error loading dashboard data: {(data as any).error}</div>
 
   const { summary, combined_trend, seasonality, hourly_pattern, weekday_pattern, yoy_series, drug_shares } = data
 
@@ -245,7 +245,7 @@ export function Dashboard() {
               <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(v: number) => [v.toLocaleString(), 'Sales Units']}
+                formatter={(v: any) => [(v ?? 0).toLocaleString(), 'Sales Units']}
                 labelFormatter={l => `Period: ${l}`}
               />
               <Area

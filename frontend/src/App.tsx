@@ -39,7 +39,7 @@ export default function App() {
                       <Route
                         path="/"
                         element={
-                          <ProtectedRoute allowedRoles={['ADMIN', 'MARKETING']}>
+                          <ProtectedRoute allowedRoles={['ADMIN', 'MARKETING', 'STAFF']}>
                             <Dashboard />
                           </ProtectedRoute>
                         }
@@ -55,7 +55,7 @@ export default function App() {
                       <Route
                         path="/strategy"
                         element={
-                          <ProtectedRoute allowedRoles={['MARKETING']}>
+                          <ProtectedRoute allowedRoles={['ADMIN', 'MARKETING']}>
                             <StrategyPage />
                           </ProtectedRoute>
                         }
@@ -71,7 +71,7 @@ export default function App() {
                       <Route
                         path="/forecast"
                         element={
-                          <ProtectedRoute allowedRoles={['MARKETING']}>
+                          <ProtectedRoute allowedRoles={['ADMIN', 'MARKETING']}>
                             <ForecastPage />
                           </ProtectedRoute>
                         }
@@ -79,7 +79,7 @@ export default function App() {
                       <Route
                         path="/performance"
                         element={
-                          <ProtectedRoute allowedRoles={['MARKETING']}>
+                          <ProtectedRoute allowedRoles={['ADMIN', 'MARKETING']}>
                             <PastPerformancePage />
                           </ProtectedRoute>
                         }

@@ -306,39 +306,46 @@ export function HackathonDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
 
       {/* Header Bar */}
-      <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-md">
+      <header className="glass-card p-5 space-y-4">
 
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-mono">2019 Day-by-Day Simulation</span>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-indigo-400 font-mono font-semibold">2019 Day-by-Day Live Simulation</span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-white gradient-text mt-0.5">
+              Forecast-Driven Pharmacy Demand & Inventory System
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Autonomous inventory tracking, reorder approvals, and lead time simulation
+            </p>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white mt-1">
-            Forecast-Driven Pharmacy Demand & Inventory System
-          </h1>
+
+          {/* Date Clock Badge */}
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 self-start lg:self-auto shadow-sm">
+            <Calendar size={18} className="text-indigo-400" />
+            <span className="font-bold font-mono text-sm tracking-wide text-white">{formattedDate}</span>
+          </div>
         </div>
 
-        {/* Live Simulation Clock & Controls */}
-        <div className="flex flex-wrap items-center gap-3 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-950/60 border border-indigo-800/50 text-indigo-300">
-            <Calendar size={18} className="text-indigo-400" />
-            <span className="font-bold font-mono text-sm tracking-wide">{formattedDate}</span>
-          </div>
-
-          <div className="flex items-center gap-1">
+        {/* Live Simulation Action Controls & Switches */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/5">
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
             {status === 'running' ? (
               <button
                 onClick={() => handleControl('paused')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition text-xs font-bold"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition text-xs font-bold cursor-pointer"
               >
                 <Pause size={14} /> Pause
               </button>
             ) : (
               <button
                 onClick={() => handleControl('running')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition text-xs font-bold"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition text-xs font-bold cursor-pointer"
               >
                 <Play size={14} /> Start
               </button>
@@ -346,14 +353,14 @@ export function HackathonDashboard() {
 
             <button
               onClick={handleStep}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition text-xs font-bold border border-slate-700"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition text-xs font-bold border border-slate-700 cursor-pointer"
             >
               <SkipForward size={14} /> Next Day
             </button>
 
             <button
               onClick={handleStepMonth}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-200 hover:bg-indigo-600/40 transition text-xs font-bold border border-indigo-500/40"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-200 hover:bg-indigo-600/50 transition text-xs font-bold border border-indigo-500/40 cursor-pointer"
               title="Run simulation to the end of current month"
             >
               <Calendar size={14} /> Next Month
@@ -361,48 +368,52 @@ export function HackathonDashboard() {
 
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition text-xs font-bold border border-slate-700"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition text-xs font-bold border border-slate-700 cursor-pointer"
               title="Reset to 2019-01-01"
             >
               <RotateCcw size={14} /> Restart
             </button>
           </div>
 
-          {/* Speed Selector */}
-          <div className="flex items-center bg-slate-900 rounded-lg p-1 border border-slate-800 text-xs">
-            {['0.25x', '0.50x', '0.75x', '1x'].map((spd) => (
-              <button
-                key={spd}
-                onClick={() => handleControl(undefined, spd)}
-                className={`px-2 py-0.5 rounded font-mono font-bold transition ${
-                  speed === spd ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {spd}
-              </button>
-            ))}
-          </div>
-
-          {/* Global Resupply Lead Time Selector (One-click for ALL drugs) */}
-          <div className="flex items-center gap-1 bg-slate-900 rounded-lg p-1 border border-slate-800 text-xs">
-            <span className="text-[11px] text-slate-400 font-semibold px-1">All Resupply:</span>
-            {[1, 2, 3, 4, 5, 6, 7].map((days) => {
-              const isSelected = drugs.every((d: any) => (d.lead_time_days || 4) === days)
-              return (
+          {/* Right Group: Speed & Lead Time Selector */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Speed Selector */}
+            <div className="flex items-center bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs">
+              <span className="text-[11px] text-slate-400 font-semibold px-2">Speed:</span>
+              {['0.25x', '0.50x', '0.75x', '1x'].map((spd) => (
                 <button
-                  key={days}
-                  onClick={() => handleGlobalLeadTimeChange(days)}
-                  className={`px-2 py-0.5 rounded font-mono font-bold transition ${
-                    isSelected
-                      ? 'bg-emerald-600 text-white shadow'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80'
+                  key={spd}
+                  onClick={() => handleControl(undefined, spd)}
+                  className={`px-2.5 py-1 rounded font-mono font-bold transition cursor-pointer ${
+                    speed === spd ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
                   }`}
-                  title={`Set ${days} Day${days > 1 ? 's' : ''} resupply lead time for ALL drugs`}
                 >
-                  {days}d
+                  {spd}
                 </button>
-              )
-            })}
+              ))}
+            </div>
+
+            {/* Global Resupply Lead Time Selector */}
+            <div className="flex items-center gap-1 bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs">
+              <span className="text-[11px] text-slate-400 font-semibold px-2">All Resupply:</span>
+              {[1, 2, 3, 4, 5, 6, 7].map((days) => {
+                const isSelected = drugs.every((d: any) => (d.lead_time_days || 4) === days)
+                return (
+                  <button
+                    key={days}
+                    onClick={() => handleGlobalLeadTimeChange(days)}
+                    className={`px-2 py-1 rounded font-mono font-bold transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-600 text-white shadow'
+                        : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                    title={`Set ${days} Day${days > 1 ? 's' : ''} resupply lead time for ALL drugs`}
+                  >
+                    {days}d
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </header>

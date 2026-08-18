@@ -157,7 +157,7 @@ export function AdminUsersPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Shield className="text-indigo-400" size={24} />
-            <h1 className="text-2xl font-bold text-white gradient-text">User Provisioning & Access Control</h1>
+            <h1 className="text-2xl font-bold gradient-text">User Provisioning & Access Control</h1>
           </div>
           <p className="text-xs text-slate-400">
             Admin console for provisioning, managing, emailing credentials, toggling active status, and deleting user accounts
